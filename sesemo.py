@@ -21,11 +21,31 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 
-class Sesemo:
+class SesemoAtom:
     
-    def __init__(self,pathtype=None):
+    def __init__(self,pathtype=None, samples=None):
         
         if pathtype is None:
-            pathtype='Default'
+            self.pathtype='Default'
+            
+        if samples is None:
+            self.samples = 1000
+            
+            
+    def getData(self):
+        
+        if self.pathtype is 'Default':
+            a = 2;
+            b = 2;
+            k = 2;
+            angle_range = np.linspace(-np.pi,np.pi,self.samples)
+            r = a + b*np.cos(k*angle_range)
+            x = r*np.cos(angle_range)
+            y = r*np.sin(angle_range)
+            
+            return x,y
+            
+    
+    
             
         
