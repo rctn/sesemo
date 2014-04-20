@@ -45,7 +45,14 @@ class SesemoAtom:
             
             return x,y
             
-    
+    def motorBasis(self,numofbasis=None):
+        
+        if numofbasis is None:
+            self.numofbasis='Default'
+            
+        
+        #I will setup a hand-coded basis that is left power, right power, time
+        
     
             
         
