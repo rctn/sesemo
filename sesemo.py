@@ -31,13 +31,19 @@ class SesemoAtom:
         if samples is None:
             self.samples = 1000
             
+        self.G = np.random.randn(2,3)
+        
+        self.F = np.random.randn(3,2)
+        
+        self.FOV = 2 # defines a FOV x FOV mask as the window
+        self.center = [0,0] #defines where the center of the camer is at this point
             
     def getData(self):
         
         if self.pathtype is 'Default':
-            a = 2;
-            b = 2;
-            k = 2;
+            a = 10 #Shift in polar coordinate space
+            b = 5 # Scale in polar coordinate space
+            k = 5 # Number of lobes you want 2 is the infinity symbol
             angle_range = np.linspace(-np.pi,np.pi,self.samples)
             r = a + b*np.cos(k*angle_range)
             x = r*np.cos(angle_range)
@@ -46,12 +52,35 @@ class SesemoAtom:
             return x,y
             
     def motorBasis(self,numofbasis=None):
-        
+        #I will setup a hand-coded basis that is left power, right power, time
         if numofbasis is None:
             self.numofbasis='Default'
+            M = np.zeros([10,3],dtype=float) # 10 basis elements with 3 parameters each
+            M = [[1,1,.1],[-1,-1,.1],[1,0.5,.1],[0.5,1,.1],[1,-0.5,.1],[-0.5,1,.1],[1,0.25,0.1],[0.25,1,0.1],[0,0.25,.1],[0.25,0,.1]]
             
+            return M
+            
+    """ Field of View 
+    Based on current X,Y (center of RF), defines b.box
+    We then compute the error function as the Euclidean distance between the point light source
+    and the center of the RF
+    """
+    def whatDoISee(self,x,y):
+        #Take FOV and actual x,y data and compute Euclidean distance
+        dist_from_self = np.linalg.norm(self.center-[x,y])
+        print dist_from_self
         
-        #I will setup a hand-coded basis that is left power, right power, time
+        return dist_from_self
+            
+    #Calculate Motor Prediction
+            
+    #Calculate Sensory Prediction
+            
+    #Infer Motor Coefficients
+    
+    #Infer Sensory Coefficients 
+            
+                
         
     
             
