@@ -62,11 +62,18 @@ class SesemoAtom:
     def motorBasis(self,numofbasis=None):
         #I will setup a hand-coded basis that is left power, right power, time
         if numofbasis is None:
-            self.numofbasis='Default'
+            self.numofbasis_M='Default'
             M = np.zeros([10,3],dtype=float) # 10 basis elements with 3 parameters each
             M = [[1,1,.1],[-1,-1,.1],[1,0.5,.1],[0.5,1,.1],[1,-0.5,.1],[-0.5,1,.1],[1,0.25,0.1],[0.25,1,0.1],[0,0.25,.1],[0.25,0,.1]]
             
             return M
+            
+    def sensoryBasis(self,numofbasis=None):
+        if numofbasis is None:
+            self.numofbasis_S='Default'
+            S = np.zeros([16,2],dtype=float)
+            S = []
+        return S
             
     """ Field of View 
     Based on current X,Y (center of RF), defines b.box
