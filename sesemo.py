@@ -29,7 +29,7 @@ class SesemoAtom:
             self.pathtype='Default'
             
         if samples is None:
-            self.samples = 1000
+            self.samples = 10000
             
         self.G = np.random.randn(2,3)
         
@@ -37,6 +37,14 @@ class SesemoAtom:
         
         self.FOV = 2 # defines a FOV x FOV mask as the window
         self.center = [0,0] #defines where the center of the camer is at this point
+        self.x,self.y = self.getData()
+        self.M = self.motorBasis()
+        #Inferred coffecients for Sensory percept
+        self.alpha = np.zeros([self.samples,2],dtype=float) 
+        #Inferred cofficents for Motor representations
+        self.beta = np.zeros([self.samples,shape(self.M)[0]],dtype=float)
+        self.TimeIdx = 0
+        self.lambda = 0.1
             
     def getData(self):
         
@@ -72,16 +80,12 @@ class SesemoAtom:
         
         return dist_from_self
             
-    #Calculate Motor Prediction
             
-    #Calculate Sensory Prediction
-            
-    #Infer Motor Coefficients
-    
-    #Infer Sensory Coefficients 
-            
-                
-        
-    
-            
+    """ The objective function
+    min F \beta^{t+1}M + \lambda \|| \beta^{t+1} - G \alpha^{t} \||
+    """
+    def objectiveFn(self,alpha,beta):
+        obj1 = np.dot(np.dot(self.beta[self.TimeIdx+1],self.M),self.F)
+        obj2 = np.linalg.norm(self.beta[self.TimeIdx+1] - np.dot(self.G,self.alpha[self.TimeIdx]))
+        return obj
         
