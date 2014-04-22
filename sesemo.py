@@ -44,7 +44,7 @@ class SesemoAtom:
         #Inferred cofficents for Motor representations
         self.beta = np.zeros([self.samples,shape(self.M)[0]],dtype=float)
         self.TimeIdx = 0
-        self.lambda = 0.1
+        self.lam = 0.1
             
     def getData(self):
         
@@ -85,7 +85,8 @@ class SesemoAtom:
     min F \beta^{t+1}M + \lambda \|| \beta^{t+1} - G \alpha^{t} \||
     """
     def objectiveFn(self,alpha,beta):
-        obj1 = np.dot(np.dot(self.beta[self.TimeIdx+1],self.M),self.F)
-        obj2 = np.linalg.norm(self.beta[self.TimeIdx+1] - np.dot(self.G,self.alpha[self.TimeIdx]))
+        obj1 = np.dot(np.dot(beta,self.M),self.F)
+        obj2 = np.linalg.norm(beta - np.dot(self.G,alpha))
+        obj = obj1 + self.lam*obj2
         return obj
         
