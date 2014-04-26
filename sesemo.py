@@ -30,11 +30,7 @@ class SesemoAtom:
             
         if samples is None:
             self.samples = 10000
-            
-        self.G = np.random.randn(2,3)
-        
-        self.F = np.random.randn(3,2)
-        
+                            
         self.FOV = 2 # defines a FOV x FOV mask as the window
         self.center = [0,0] #defines where the center of the camer is at this point
         self.x,self.y = self.getData()
@@ -43,6 +39,8 @@ class SesemoAtom:
         self.alpha = np.zeros([self.samples,2],dtype=float) 
         #Inferred cofficents for Motor representations
         self.beta = np.zeros([self.samples,shape(self.M)[0]],dtype=float)
+        self.G = np.random.randn(shape(self.S)[0],shape(self.M)[0]) #Going between coefficient spaces    
+        self.F = np.random.randn(shape(self.M)[1],shape.self(S)[1]) #Going from Motor Space to Camera Space
         self.TimeIdx = 0
         self.lam = 0.1
             
@@ -71,8 +69,10 @@ class SesemoAtom:
     def sensoryBasis(self,numofbasis=None):
         if numofbasis is None:
             self.numofbasis_S='Default'
-            S = np.zeros([16,2],dtype=float)
-            S = []
+            S = np.zeros([8,2],dtype=float)
+            S = [[0,1],[0,-1],[1,0],[-1,0],[np.cos(pi/4),np.sin(pi/4)],
+                 [np.cos(0.75*pi),np.sin(0.75*pi)],[np.cos(1.25*pi),np.sin(1.25*pi)]
+                 [np.cos(1.75*pi),np.sin(1.75*pi)]]
         return S
             
     """ Field of View 
@@ -96,4 +96,8 @@ class SesemoAtom:
         obj2 = np.linalg.norm(beta - np.dot(self.G,alpha))
         obj = obj1 + self.lam*obj2
         return obj
+        
+    def learnmodel(self):
+        
+        return 1
         
