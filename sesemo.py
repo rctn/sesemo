@@ -44,7 +44,7 @@ class SesemoAtom:
         self.G = np.random.randn(np.shape(self.S)[0],np.shape(self.M)[0]) #Going between coefficient spaces    
         self.F = np.random.randn(np.shape(self.M)[1],np.shape(self.S)[1]) #Going from Motor Space to Camera Space
         self.TimeIdx = 0
-        self.lam = 0.1
+        self.lam = 10
         self.learnIterations = 1000
             
     def getData(self):
@@ -116,6 +116,19 @@ class SesemoAtom:
         print(obj)
         return obj
         
+    def sparseInference(self,alpha):
+        data = np.zeros([1,2])
+        data[0][0] = self.x[self.TimeIdx]
+        data[0][1] = self.y[self.TimeIdx]
+        #print(np.shape(alpha))
+        #print(np.shape(self.S))
+        present_recon = np.dot(alpha,self.S)
+        obj1 = np.linalg.norm(data - present_recon)
+        obj2 = self.lam*np.sum(np.absolute(alpha))                
+        obj = obj1 + obj2
+        print(obj)
+        return obj
+        
     def learnmodel(self):
         for i in range(0,self.learnIterations):
             #Let's party!
@@ -124,11 +137,13 @@ class SesemoAtom:
             data[0][0] = self.x[self.TimeIdx]
             data[0][1] = self.y[self.TimeIdx]
             #Compute Alpha (Error)
-            self.whatDoISee(data)
+            dist_from_self = self.whatDoISee(data)
+            print 'The value of distance is %f' %dist_from_self
             #Learn coeficients
             res = minimize(self.objectiveFn,self.beta[self.TimeIdx],method='BFGS',jac=None,tol=1e-3,options={'disp':False,'maxiter':10})            
             self.beta[self.TimeIdx+1] = res.x
+            self.center = np.linalg.norm(np.dot(np.dot(self.beta[self.TimeIdx],self.M),self.F))
+            print self.x[self.TimeIdx],self.y[self.TimeIdx],self.center
             self.TimeIdx = self.TimeIdx + 1
-            print(res.x)
         return 1
         
