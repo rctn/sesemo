@@ -44,7 +44,7 @@ class SesemoAtom:
         self.G = np.random.randn(np.shape(self.S)[0],np.shape(self.M)[0]) #Going between coefficient spaces    
         self.F = np.random.randn(np.shape(self.M)[1],np.shape(self.S)[1]) #Going from Motor Space to Camera Space
         self.TimeIdx = 0
-        self.lam = 10
+        self.lam = 1
         self.learnIterations = 1000
             
     def getData(self):
@@ -98,8 +98,7 @@ class SesemoAtom:
     """
     def whatDoISee(self,data):
         #Take FOV and actual x,y data and compute Euclidean distance
-        dist_from_self = np.linalg.norm(self.center-data)
-        print dist_from_self
+        dist_from_self = np.linalg.norm(self.center-data)        
         self.alpha[self.TimeIdx] = np.dot(data,np.transpose(self.S))
         
         
@@ -130,6 +129,7 @@ class SesemoAtom:
         return obj
         
     def learnmodel(self):
+        self.TimeIdx = 0
         for i in range(0,self.learnIterations):
             #Let's party!
             #PIck out Data
@@ -143,7 +143,8 @@ class SesemoAtom:
             res = minimize(self.objectiveFn,self.beta[self.TimeIdx],method='BFGS',jac=None,tol=1e-3,options={'disp':False,'maxiter':10})            
             self.beta[self.TimeIdx+1] = res.x
             self.center = np.linalg.norm(np.dot(np.dot(self.beta[self.TimeIdx],self.M),self.F))
-            print self.x[self.TimeIdx],self.y[self.TimeIdx],self.center
+            #Let's calculateho far we are from center to Point
+            print(np.linalg.norm(data-self.center))
             self.TimeIdx = self.TimeIdx + 1
         return 1
         
