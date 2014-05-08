@@ -47,7 +47,7 @@ class SesemoAtom:
         self.F = np.random.randn(np.shape(self.M)[1],np.shape(self.S)[1]) #Going from Motor Space to Camera Space
         self.TimeIdx = 0
         self.lam1 = .1
-        self.lam2 = 1
+        self.lam2 = .91
         self.learnIterations = 100
         self.DEBUG = True
             
@@ -121,7 +121,8 @@ class SesemoAtom:
     def objectiveFn(self,beta):
         obj1 = np.linalg.norm(self.data - np.dot(np.dot(beta,self.M),self.F)) #Not clear that this is the bestthing to do. It's the nextprediction
         obj2 = np.linalg.norm(beta - np.dot(self.alpha[self.TimeIdx],self.G))
-        obj = obj1 + self.lam2*obj2                
+        obj3 = self.lam2*np.sum(np.abs(beta))
+        obj = obj2+obj3               
         return obj
         
     def sparseInference(self,alpha):
@@ -154,6 +155,7 @@ class SesemoAtom:
                 print('value of alpha is')
                 print(res.x)            
             #Infer Beta
+            cons = ({'type':'ineq','fun': lambda beta: np.ndarra()})
             res = minimize(self.objectiveFn,self.beta[self.TimeIdx],method='BFGS',jac=None,tol=1e-3,options={'disp':False,'maxiter':10})            
             self.beta[self.TimeIdx+1] = res.x
             if self.DEBUG is True:
