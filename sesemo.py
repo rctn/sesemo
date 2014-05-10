@@ -68,7 +68,8 @@ class SesemoAtom:
         #I will setup a hand-coded basis that is left power, right power, time
         if numofbasis is None:
             self.numofbasis_M='Default'
-            M = np.zeros([10,3],dtype=float) # 10 basis elements with 3 parameters each
+            M = np.zeros([10,2],dtype=float) # 10 basis elements with 3 parameters each
+            '''            
             M[0] = [1,1,.1]
             M[1] = [-1,-1,.1]
             M[2] = [1,0.5,.1] 
@@ -79,6 +80,17 @@ class SesemoAtom:
             M[7] = [0.25,1,0.1]
             M[8] = [0,0.25,.1]
             M[9] = [0.25,0,.1] 
+            '''
+            M[0] = [1,1]
+            M[1] = [-1,-1]
+            M[2] = [1,0.5] 
+            M[3] = [0.5,1] 
+            M[4] = [1,-0.5]
+            M[5] = [-0.5,1] 
+            M[6] = [1,0.25]
+            M[7] = [0.25,1]
+            M[8] = [0,0.25]
+            M[9] = [0.25,0] 
             return M
             
     def sensoryBasis(self,numofbasis=None): #Make sure they are ndarrays and not lists
@@ -100,31 +112,15 @@ class SesemoAtom:
     We then compute the error function as the Euclidean distance between the point light source
     and the center of the RF
     """
-    def whatDoISee(self,data):
+    def whatDoISee(self,beta):
         #Take FOV and actual x,y data and compute Euclidean distance
-        dist_from_self = np.linalg.norm(self.center-data)        
-        self.alpha[self.TimeIdx] = np.dot(data,np.transpose(self.S))
-        '''        
-        if self.DEBUG is True:
-            print 'The value of distance from fn is %f' %dist_from_self
-            print 'Time Idx is %d'%self.TimeIdx
-            print self.center
-            print(data)
-        ''' 
+        dist_from_self = np.linalg.norm(self.data -(self.center+np.dot(beta,self.M)))
         
         return dist_from_self
             
             
-    """ The objective function
-    min F \beta^{t+1}M + \lambda \|| \beta^{t+1} - G \alpha^{t} \||
-    """
-    def objectiveFn(self,beta):
-        obj1 = np.linalg.norm(self.data - np.dot(np.dot(beta,self.M),self.F)) #Not clear that this is the bestthing to do. It's the nextprediction
-        obj2 = np.linalg.norm(beta - np.dot(self.alpha[self.TimeIdx],self.G))
-        obj3 = self.lam2*np.sum(np.abs(beta))
-        obj = obj2+obj3               
-        return obj
-        
+    
+    '''    
     def sparseInference(self,alpha):
         data = np.zeros([1,2])
         data[0][0] = self.x[self.TimeIdx]
@@ -136,7 +132,8 @@ class SesemoAtom:
         obj2 = self.lam1*np.sum(np.absolute(alpha))                
         obj = obj1 + obj2        
         return obj
-        
+    '''
+    
     def learnmodel(self):
         self.TimeIdx = 0
         for i in range(0,self.learnIterations):
@@ -145,29 +142,23 @@ class SesemoAtom:
             data = np.zeros([1,2])
             data[0][0] = self.x[self.TimeIdx]
             data[0][1] = self.y[self.TimeIdx]
-            self.data = data
-            #Compute Alpha (Error)
-            dist_from_self = self.whatDoISee(data)              
-            #Infer Alpha
-            res = minimize(self.sparseInference,np.zeros([1,8]),method='BFGS',jac=None,tol=1e-3,options={'disp':True})
-            if self.DEBUG is True:
-                self.alpha[self.TimeIdx] = res.x            
-                print('value of alpha is')
-                print(res.x)            
+            self.data = data            
+
             #Infer Beta
-            cons = ({'type':'ineq','fun': lambda beta: np.ndarra()})
-            res = minimize(self.objectiveFn,self.beta[self.TimeIdx],method='BFGS',jac=None,tol=1e-3,options={'disp':False,'maxiter':10})            
+            #cons = ({'type':'ineq','fun': lambda beta: np.ndarra()})
+            res = minimize(self.whatDoISee,self.beta[self.TimeIdx],method='BFGS',jac=None,tol=1e-3,options={'disp':False,'maxiter':10})            
             self.beta[self.TimeIdx+1] = res.x
             if self.DEBUG is True:
                 print('value of beta is %f')
                 print(res.x)
-            self.center = self.center + np.dot(np.dot(self.beta[self.TimeIdx],self.M),self.F)
+            self.center = self.center + np.dot(self.beta[self.TimeIdx],self.M)
             if self.DEBUG is True:        
                 print 'Value of data'
                 print data
                 print 'value of center is'
                 print self.center
                 #Let's calculateho far we are from center to Point
+                print 'Error'
                 print(np.linalg.norm(data-self.center))
             self.TimeIdx = self.TimeIdx + 1
         return 1
