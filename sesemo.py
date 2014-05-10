@@ -43,12 +43,12 @@ class SesemoAtom:
         self.alpha = np.zeros([self.samples,np.shape(self.S)[0]],dtype=float) 
         #Inferred cofficents for Motor representations
         self.beta = np.zeros([self.samples,np.shape(self.M)[0]],dtype=float)
-        self.G = np.random.randn(np.shape(self.S)[0],np.shape(self.M)[0]) #Going between coefficient spaces    
+        self.G = np.random.randn(np.shape(self.S)[0],np.shape(self.M)[0]) #Going between sensory and motor repr. spaces 
         self.F = np.random.randn(np.shape(self.M)[1],np.shape(self.S)[1]) #Going from Motor Space to Camera Space
         self.TimeIdx = 0
         self.lam1 = .1
         self.lam2 = .91
-        self.learnIterations = 100
+        self.learnIterations = 1000
         self.DEBUG = True
             
     def getData(self):
@@ -118,9 +118,22 @@ class SesemoAtom:
         
         return dist_from_self
             
-            
-    
-    '''    
+
+    def whatDoISee2(self,var):
+
+        #Extract variables
+        
+        G = var[0:80]
+        G = G.reshape([8,10])
+        M = var[80:]
+        M = M.reshape([10,2])
+        #compute beta
+        beta = np.dot(self.alpha[self.TimeIdx],G)
+        
+        #Calculate error
+        dist_from_self = np.linalg.norm(self.data -(self.center+np.dot(beta,M)))
+        return dist_from_self
+
     def sparseInference(self,alpha):
         data = np.zeros([1,2])
         data[0][0] = self.x[self.TimeIdx]
@@ -132,7 +145,7 @@ class SesemoAtom:
         obj2 = self.lam1*np.sum(np.absolute(alpha))                
         obj = obj1 + obj2        
         return obj
-    '''
+    
     
     def learnmodel(self):
         self.TimeIdx = 0
@@ -143,14 +156,28 @@ class SesemoAtom:
             data[0][0] = self.x[self.TimeIdx]
             data[0][1] = self.y[self.TimeIdx]
             self.data = data            
-
+            res = minimize(self.sparseInference, self.alpha[self.TimeIdx],method='BFGS',jac=None,tol=1e-3,options={'disp':False,'maxiter':10})
+            self.alpha[self.TimeIdx] = res.x
             #Infer Beta
             #cons = ({'type':'ineq','fun': lambda beta: np.ndarra()})
-            res = minimize(self.whatDoISee,self.beta[self.TimeIdx],method='BFGS',jac=None,tol=1e-3,options={'disp':False,'maxiter':10})            
-            self.beta[self.TimeIdx+1] = res.x
+            #res = minimize(self.whatDoISee,self.beta[self.TimeIdx],method='BFGS',jac=None,tol=1e-3,options={'disp':False,'maxiter':10})  
+            G = self.G.flatten()
+            M = self.M.flatten()
+            var = np.concatenate((G,M))
+            print('Solving for M,G')
+            res = minimize(self.whatDoISee2,var,method='BFGS',jac=None,tol=1e-3,options={'disp':True,'maxiter':10})            
+            #print(res.x)
+            var = res.x
+            G = var[0:80]
+            self.G = G.reshape([8,10])
+            M = var[80:]
+            self.M = M.reshape([10,2])
+            self.beta[self.TimeIdx+1] = np.dot(self.alpha[self.TimeIdx],self.G)
+            '''            
             if self.DEBUG is True:
                 print('value of beta is %f')
                 print(res.x)
+            '''
             self.center = self.center + np.dot(self.beta[self.TimeIdx],self.M)
             if self.DEBUG is True:        
                 print 'Value of data'
@@ -158,7 +185,7 @@ class SesemoAtom:
                 print 'value of center is'
                 print self.center
                 #Let's calculateho far we are from center to Point
-                print 'Error'
+                print '*******Error******'
                 print(np.linalg.norm(data-self.center))
             self.TimeIdx = self.TimeIdx + 1
         return 1
