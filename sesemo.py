@@ -108,10 +108,9 @@ class SesemoAtom:
         return S
             
     """ Field of View 
-    Based on current X,Y (center of RF), defines b.box
-    We then compute the error function as the Euclidean distance between the point light source
-    and the center of the RF
+   Compute error to infer beta
     """
+
     def whatDoISee(self,beta):
         #Take FOV and actual x,y data and compute Euclidean distance
         dist_from_self = np.linalg.norm(self.data -(self.center+np.dot(beta,self.M)))
@@ -119,10 +118,11 @@ class SesemoAtom:
         return dist_from_self
             
 
+    '''
+    Objective that estimate both of G,M
+    '''
     def whatDoISee2(self,var):
-
-        #Extract variables
-        
+        #Extract variables        
         G = var[0:80]
         G = G.reshape([8,10])
         M = var[80:]
@@ -132,6 +132,17 @@ class SesemoAtom:
         
         #Calculate error
         dist_from_self = np.linalg.norm(self.data -(self.center+np.dot(beta,M)))
+        return dist_from_self
+        
+    '''
+    Objective that estimate only M
+    '''
+    def whatDoISee3(self,var):
+        M = var
+        M = M.reshape([10,2])
+        beta = np.dot(self.alpha[self.TimeIdx],self.G)
+        #Calculate error
+        dist_from_self = np.linalg.norm(self.data -(self.center+np.dot(beta,M)))        
         return dist_from_self
 
     def sparseInference(self,alpha):
@@ -149,6 +160,7 @@ class SesemoAtom:
     
     def learnmodel(self):
         self.TimeIdx = 0
+        EXPT = 2
         for i in range(0,self.learnIterations):
             #Let's party!
             #PIck out Data
@@ -159,26 +171,34 @@ class SesemoAtom:
             res = minimize(self.sparseInference, self.alpha[self.TimeIdx],method='BFGS',jac=None,tol=1e-3,options={'disp':False,'maxiter':10})
             self.alpha[self.TimeIdx] = res.x
             #Infer Beta
-            #cons = ({'type':'ineq','fun': lambda beta: np.ndarra()})
-            #res = minimize(self.whatDoISee,self.beta[self.TimeIdx],method='BFGS',jac=None,tol=1e-3,options={'disp':False,'maxiter':10})  
-            G = self.G.flatten()
-            M = self.M.flatten()
-            var = np.concatenate((G,M))
-            print('Solving for M,G')
-            res = minimize(self.whatDoISee2,var,method='BFGS',jac=None,tol=1e-3,options={'disp':True,'maxiter':10})            
-            #print(res.x)
-            var = res.x
-            G = var[0:80]
-            self.G = G.reshape([8,10])
-            M = var[80:]
-            self.M = M.reshape([10,2])
-            self.beta[self.TimeIdx+1] = np.dot(self.alpha[self.TimeIdx],self.G)
+            if EXPT is 0:
+                res = minimize(self.whatDoISee,self.beta[self.TimeIdx],method='BFGS',jac=None,tol=1e-3,options={'disp':False,'maxiter':10})  
+                self.beta[self.TimeIdx+1] = res.x
+            elif EXPT is 1:
+                G = self.G.flatten()
+                M = self.M.flatten()
+                var = np.concatenate((G,M))
+                print('Solving for M,G')
+                res = minimize(self.whatDoISee2,var,method='BFGS',jac=None,tol=1e-3,options={'disp':True,'maxiter':10})            
+                #print(res.x)
+                var = res.x
+                G = var[0:80]
+                self.G = G.reshape([8,10])
+                M = var[80:]
+                self.M = M.reshape([10,2])
+                self.beta[self.TimeIdx+1] = np.dot(self.alpha[self.TimeIdx],self.G)
+            elif EXPT is 2:
+                M = self.M.flatten()
+                print('Solving for M,G')
+                res = minimize(self.whatDoISee3,M,method='BFGS',jac=None,tol=1e-3,options={'disp':True,'maxiter':10})            
+                self.M = res.x.reshape([10,2])
+                self.beta[self.TimeIdx+1] = np.dot(self.alpha[self.TimeIdx],self.G)
             '''            
             if self.DEBUG is True:
                 print('value of beta is %f')
                 print(res.x)
             '''
-            self.center = self.center + np.dot(self.beta[self.TimeIdx],self.M)
+            self.center = self.center + np.dot(self.beta[self.TimeIdx+1],self.M)
             if self.DEBUG is True:        
                 print 'Value of data'
                 print data
