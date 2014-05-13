@@ -65,12 +65,12 @@ class SesemoAtom:
         #ax = plt.axes(xlim=(-10,10),ylim=(-10,10))
         #self.anim, = ax.plot([],[],'g') 
             
-    def getData(self):
+    def getData(self,a=10,b=5,k=5):
         
         if self.pathtype is 'Default':
-            a = 10 #Shift in polar coordinate space
-            b = 5 # Scale in polar coordinate space
-            k = 5 # Number of lobes you want 2 is the infinity symbol
+            #a = 10 #Shift in polar coordinate space
+            #b = 5 # Scale in polar coordinate space
+            #k = 5 # Number of lobes you want 2 is the infinity symbol
             angle_range = np.linspace(-np.pi,np.pi,self.samples)
             r = a + b*np.cos(k*angle_range)
             x = r*np.cos(angle_range)
@@ -149,7 +149,7 @@ class SesemoAtom:
         beta = np.dot(self.alpha[self.TimeIdx],G)
         
         #Calculate error
-        dist_from_self = np.linalg.norm(self.data -(self.center+np.dot(beta,M)))
+        dist_from_self = np.linalg.norm(self.data -(self.center+np.dot(beta,M))) + np.linalg.norm(G)
         return dist_from_self
         
     '''
@@ -184,8 +184,8 @@ class SesemoAtom:
     
     
     def learnmodel(self):
-        self.TimeIdx = 0
-        EXPT = 4
+        self.TimeIdx = 1
+        EXPT = 1
         for i in range(0,self.learnIterations-2):
             #Let's party!
             #PIck out Data
@@ -242,3 +242,38 @@ class SesemoAtom:
             self.TimeIdx = self.TimeIdx + 1
         return 1
         
+    def testmodel(self):
+        print('***********starting Test!!!*******************')
+        self.TimeIdx = 0
+        #Get new data
+        self.getData(k=7)
+        for i in range(0,self.learnIterations-2):
+            #Let's party!
+            #PIck out Data
+            data = np.zeros([1,2])
+            data[0][0] = self.x[self.TimeIdx]
+            data[0][1] = self.y[self.TimeIdx]
+            self.data = data        
+            '''
+            self.center = np.zeros([1,2]) #defines where the center of the camer is at this point
+            self.center[0][0] = self.x[0]
+            self.center[0][1] = self.y[0]
+            '''
+            res = minimize(self.sparseInference, self.alpha[self.TimeIdx],method='BFGS',jac=None,tol=1e-3,options={'disp':False,'maxiter':10})
+            self.alpha[self.TimeIdx] = res.x
+            error = np.linalg.norm(data-self.center)
+            #Compute Beta
+            self.beta[self.TimeIdx+1] = np.dot(self.alpha[self.TimeIdx],self.G)
+            self.center = self.center + np.dot(self.beta[self.TimeIdx+1],self.M)
+            if self.DEBUG is True:        
+                print 'Value of data'
+                print data
+                print 'value of center is'
+                print self.center
+                #Let's calculateho far we are from center to Point
+                print '*******Error******'
+                print(error)
+            self.Error[self.TimeIdx] = error
+            self.TimeIdx = self.TimeIdx + 1
+        return 1
+                    
