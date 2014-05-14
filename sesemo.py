@@ -33,7 +33,7 @@ class SesemoAtom:
             self.samples = samples
                             
         if iterations is None:
-            self.learnIterations = 100
+            self.learnIterations = 10
         else:
             self.learnIterations = iterations                        
         self.FOV = 2 # defines a FOV x FOV mask as the window
@@ -48,7 +48,8 @@ class SesemoAtom:
         if learnSensory is None:
             self.S = self.sensoryBasis()
         else:
-            self.S = np.random.randn(learnSensory,2)
+            #The case where you can look at temporal dependency
+            self.S = np.random.randn(learnSensory[0],learnSensory[1])
                 
         #Inferred coffecients for Sensory percept
         self.alpha = np.zeros([self.samples,np.shape(self.S)[0]],dtype=float) 
@@ -59,7 +60,8 @@ class SesemoAtom:
         self.TimeIdx = 0
         self.lam1 = .1
         self.LR = .1
-        self.Error = np.zeros([self.learnIterations],dtype=float)
+        self.TrError = np.zeros([self.learnIterations],dtype=float)
+        self.TeError = np.zeros([self.learnIterations],dtype=float)
         self.DEBUG = True
         #self.fig = plt.figure()
         #ax = plt.axes(xlim=(-10,10),ylim=(-10,10))
@@ -174,10 +176,29 @@ class SesemoAtom:
         obj2 = self.lam1*np.sum(np.absolute(alpha))                
         obj = obj1 + obj2        
         return obj
-        
+ 
+    def sparseInference2(self,alpha):
+        data = np.zeros([1,4])
+        data[0][0] = self.x[self.TimeIdx-1]
+        data[0][1] = self.y[self.TimeIdx-1]
+        data[0][2] = self.x[self.TimeIdx]
+        data[0][3] = self.y[self.TimeIdx]
+        #print(np.shape(alpha))
+        #print(np.shape(self.S))
+        present_recon = np.dot(alpha,self.S)
+        obj1 = np.linalg.norm(data - present_recon)
+        obj2 = self.lam1*np.sum(np.absolute(alpha))                
+        obj = obj1 + obj2        
+        return obj       
 
     def updateSensory(self,data):
-        grad = -2*np.dot(self.alpha[self.TimeIdx],(data-np.dot(self.S,self.alpha[self.TimeIdx])))
+        print('NP SHape')
+        print(np.shape(self.alpha))
+        print(np.shape(self.S))
+        print(np.shape(data))
+        estim = (data-np.dot(self.alpha[self.TimeIdx],self.S))
+        print(np.shape(estim))
+        grad = -2*np.dot(self.alpha[self.TimeIdx].T, estim)
         update = self.LR*grad
         self.S = self.S + update
         return np.linalg.norm(update)
@@ -185,21 +206,23 @@ class SesemoAtom:
     
     def learnmodel(self):
         self.TimeIdx = 1
-        EXPT = 1
-        for i in range(0,self.learnIterations-2):
+        EXPT = 3
+        for i in range(0,self.learnIterations-5):
             #Let's party!
             #PIck out Data
             data = np.zeros([1,2])
             data[0][0] = self.x[self.TimeIdx]
             data[0][1] = self.y[self.TimeIdx]
             self.data = data            
-            res = minimize(self.sparseInference, self.alpha[self.TimeIdx],method='BFGS',jac=None,tol=1e-3,options={'disp':False,'maxiter':10})
-            self.alpha[self.TimeIdx] = res.x
             #Infer Beta
             if EXPT is 0:
+                res = minimize(self.sparseInference, self.alpha[self.TimeIdx],method='BFGS',jac=None,tol=1e-3,options={'disp':False,'maxiter':10})
+                self.alpha[self.TimeIdx] = res.x
                 res = minimize(self.whatDoISee,self.beta[self.TimeIdx],method='BFGS',jac=None,tol=1e-3,options={'disp':False,'maxiter':10})  
                 self.beta[self.TimeIdx+1] = res.x
             elif EXPT is 1:
+                res = minimize(self.sparseInference, self.alpha[self.TimeIdx],method='BFGS',jac=None,tol=1e-3,options={'disp':False,'maxiter':10})
+                self.alpha[self.TimeIdx] = res.x            
                 G = self.G.flatten()
                 M = self.M.flatten()
                 var = np.concatenate((G,M))
@@ -213,16 +236,41 @@ class SesemoAtom:
                 self.M = M.reshape([np.shape(self.M)[0],np.shape(self.M)[1]])
                 self.beta[self.TimeIdx+1] = np.dot(self.alpha[self.TimeIdx],self.G)
             elif EXPT is 2:
+                res = minimize(self.sparseInference, self.alpha[self.TimeIdx],method='BFGS',jac=None,tol=1e-3,options={'disp':False,'maxiter':10})
+                self.alpha[self.TimeIdx] = res.x
                 M = self.M.flatten()
                 print('Solving for M')
                 res = minimize(self.whatDoISee3,M,method='BFGS',jac=None,tol=1e-3,options={'disp':True,'maxiter':10})            
                 self.M = res.x.reshape([np.shape(self.M)[0],np.shape(self.M)[1]])
                 self.beta[self.TimeIdx+1] = np.dot(self.alpha[self.TimeIdx],self.G)
-            elif EXPT is 4:
+            elif EXPT is 3:
                 print('Solving for M,S')
                 #update S
-                #Then infer the coefficients
-                #Solve for M
+                #Make Data a few time frames long
+                data = np.zeros([1,np.shape(self.S)[1]])
+                data[0][0] = self.x[self.TimeIdx-1]
+                data[0][1] = self.y[self.TimeIdx-1] 
+                data[0][2] = self.x[self.TimeIdx]
+                data[0][3] = self.y[self.TimeIdx]
+                #Infer coefficients for time frame
+                res = minimize(self.sparseInference2, self.alpha[self.TimeIdx],method='BFGS',jac=None,tol=1e-3,options={'disp':False,'maxiter':10})
+                self.alpha[self.TimeIdx] = res.x                
+                #Update Sensory representation
+                self.updateSensory(data)                
+                #Solve for M & G
+                G = self.G.flatten()
+                M = self.M.flatten()
+                var = np.concatenate((G,M))
+                print('Solving for M,G')
+                res = minimize(self.whatDoISee2,var,method='BFGS',jac=None,tol=1e-3,options={'disp':True,'maxiter':10})            
+                #print(res.x)
+                var = res.x
+                G = var[0:np.shape(self.G)[0]*np.shape(self.G)[1]]
+                self.G = G.reshape([np.shape(self.G)[0],np.shape(self.G)[1]])
+                M = var[np.shape(self.G)[0]*np.shape(self.G)[1]:]
+                self.M = M.reshape([np.shape(self.M)[0],np.shape(self.M)[1]])
+                self.beta[self.TimeIdx+1] = np.dot(self.alpha[self.TimeIdx],self.G)
+                
             '''            
             if self.DEBUG is True:
                 print('value of beta is %f')
@@ -238,7 +286,7 @@ class SesemoAtom:
                 #Let's calculateho far we are from center to Point
                 print '*******Error******'
                 print(error)
-            self.Error[self.TimeIdx] = error
+            self.TrError[self.TimeIdx] = error
             self.TimeIdx = self.TimeIdx + 1
         return 1
         
@@ -273,7 +321,7 @@ class SesemoAtom:
                 #Let's calculateho far we are from center to Point
                 print '*******Error******'
                 print(error)
-            self.Error[self.TimeIdx] = error
+            self.TeError[self.TimeIdx] = error
             self.TimeIdx = self.TimeIdx + 1
         return 1
                     
