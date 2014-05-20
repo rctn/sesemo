@@ -1,0 +1,48 @@
+This is BibTeX, Version 0.99d (TeX Live 2011)
+Capacity: max_strings=35307, hash_size=35307, hash_prime=30011
+The top-level auxiliary file: paper_template.aux
+The style file: plainnat.bst
+Database file #1: cs287_final.bib
+Warning--can't use both volume and number fields in krizhevsky2012imagenet
+You've used 6 entries,
+            2773 wiz_defined-function locations,
+            634 strings with 5922 characters,
+and the built_in function-call counts, 3047 in all, are:
+= -- 275
+> -- 151
+< -- 7
++ -- 52
+- -- 45
+* -- 244
+:= -- 445
+add.period$ -- 18
+call.type$ -- 6
+change.case$ -- 33
+chr.to.int$ -- 5
+cite$ -- 13
+duplicate$ -- 150
+empty$ -- 258
+format.name$ -- 55
+if$ -- 653
+int.to.chr$ -- 2
+int.to.str$ -- 1
+missing$ -- 6
+newline$ -- 38
+num.names$ -- 24
+pop$ -- 67
+preamble$ -- 1
+purify$ -- 27
+quote$ -- 0
+skip$ -- 117
+stack$ -- 0
+substring$ -- 135
+swap$ -- 33
+text.length$ -- 4
+text.prefix$ -- 0
+top$ -- 0
+type$ -- 66
+warning$ -- 1
+while$ -- 29
+width$ -- 0
+write$ -- 86
+(There was 1 warning)

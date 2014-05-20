@@ -1,0 +1,49 @@
+\begin{thebibliography}{6}
+\providecommand{\natexlab}[1]{#1}
+\providecommand{\url}[1]{\texttt{#1}}
+\expandafter\ifx\csname urlstyle\endcsname\relax
+  \providecommand{\doi}[1]{doi: #1}\else
+  \providecommand{\doi}{doi: \begingroup \urlstyle{rm}\Url}\fi
+
+\bibitem[Barlow(1961)]{barlow1961possible}
+Horace~B Barlow.
+\newblock Possible principles underlying the transformation of sensory
+  messages.
+\newblock \emph{Sensory communication}, pages 217--234, 1961.
+
+\bibitem[Hubel and Wiesel(1968)]{hubel1968receptive}
+David~H Hubel and Torsten~N Wiesel.
+\newblock Receptive fields and functional architecture of monkey striate
+  cortex.
+\newblock \emph{The Journal of physiology}, 195\penalty0 (1):\penalty0
+  215--243, 1968.
+
+\bibitem[Krizhevsky et~al.(2012)Krizhevsky, Sutskever, and
+  Hinton]{krizhevsky2012imagenet}
+Alex Krizhevsky, Ilya Sutskever, and Geoffrey~E Hinton.
+\newblock Imagenet classification with deep convolutional neural networks.
+\newblock In \emph{NIPS}, volume~1, page~4, 2012.
+
+\bibitem[O'Regan and No{\"e}(2001)]{o2001sensorimotor}
+J~Kevin O'Regan and Alva No{\"e}.
+\newblock A sensorimotor account of vision and visual consciousness.
+\newblock \emph{Behavioral and brain sciences}, 24\penalty0 (05):\penalty0
+  939--973, 2001.
+
+\bibitem[Philipona et~al.(2003{\natexlab{a}})Philipona, O'Regan, and
+  Nadal]{philipona2003there}
+David Philipona, J~Kevin O'Regan, and J-P Nadal.
+\newblock Is there something out there? inferring space from sensorimotor
+  dependencies.
+\newblock \emph{Neural computation}, 15\penalty0 (9):\penalty0 2029--2049,
+  2003{\natexlab{a}}.
+
+\bibitem[Philipona et~al.(2003{\natexlab{b}})Philipona, O'regan, Nadal, and
+  Coenen]{philipona2003perception}
+David Philipona, Jk~O'regan, J-P Nadal, and Olivier Coenen.
+\newblock Perception of the structure of the physical world using unknown
+  multimodal sensors and effectors.
+\newblock In \emph{Advances in neural information processing systems}, page
+  None, 2003{\natexlab{b}}.
+
+\end{thebibliography}
