@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.1415926-2.3-1.40.12 (TeX Live 2011) (format=pdflatex 2011.7.3)  20 MAY 2014 00:35
+This is pdfTeX, Version 3.1415926-2.3-1.40.12 (TeX Live 2011) (format=pdflatex 2011.7.3)  20 MAY 2014 20:04
 entering extended mode
  \write18 enabled.
  file:line:error style messages enabled.
@@ -370,29 +370,25 @@ LaTeX Font Info:    Try loading font information for U+rsfs on input line 83.
 (/usr/local/texlive/2011/texmf-dist/tex/latex/jknapltx/ursfs.fd
 File: ursfs.fd 1998/03/24 rsfs font definition file (jk)
 )
-<sesemo1.png, id=26, 240.9pt x 256.96pt>
+<sesemo1.png, id=23, 240.9pt x 256.96pt>
 File: sesemo1.png Graphic file (type png)
  <use sesemo1.png>
-Package pdftex.def Info: sesemo1.png used on input line 92.
+Package pdftex.def Info: sesemo1.png used on input line 97.
 (pdftex.def)             Requested size: 144.5411pt x 154.17719pt.
-
-Underfull \vbox (badness 1742) has occurred while \output is active []
-
  [1{/usr/local/texlive/2011/texmf-var/fonts/map/pdftex/updmap/pdftex.map}
 
 
  <./sesemo1.png>]
-<train1.png, id=53, 378.41376pt x 256.96pt>
+<train1.png, id=51, 378.41376pt x 256.96pt>
 File: train1.png Graphic file (type png)
  <use train1.png>
-Package pdftex.def Info: train1.png used on input line 121.
+Package pdftex.def Info: train1.png used on input line 127.
 (pdftex.def)             Requested size: 227.05pt x 154.17719pt.
 LaTeX Font Info:    External font `cmex10' loaded for size
-(Font)              <8> on input line 129.
+(Font)              <8> on input line 135.
 LaTeX Font Info:    External font `cmex10' loaded for size
-(Font)              <6> on input line 129.
-
-(./paper_template.bbl [2 <./train1.png>])
+(Font)              <6> on input line 135.
+ [2 <./train1.png>] (./paper_template.bbl)
 
 ** Conference Paper **
 Before submitting the final camera ready copy, remember to:
@@ -404,26 +400,26 @@ Before submitting the final camera ready copy, remember to:
  uses only Type 1 fonts and that every step in the generation
  process uses the appropriate paper size.
 
-Package atveryend Info: Empty hook `BeforeClearDocument' on input line 161.
+Package atveryend Info: Empty hook `BeforeClearDocument' on input line 170.
 [3
 
 ]
-Package atveryend Info: Empty hook `AfterLastShipout' on input line 161.
+Package atveryend Info: Empty hook `AfterLastShipout' on input line 170.
  (./paper_template.aux)
-Package atveryend Info: Executing hook `AtVeryEndDocument' on input line 161.
-Package atveryend Info: Executing hook `AtEndAfterFileList' on input line 161.
+Package atveryend Info: Executing hook `AtVeryEndDocument' on input line 170.
+Package atveryend Info: Executing hook `AtEndAfterFileList' on input line 170.
 Package rerunfilecheck Info: File `paper_template.out' has not changed.
-(rerunfilecheck)             Checksum: 60F57CCD811F6717B8602B21A726AF1E;186.
-Package atveryend Info: Empty hook `AtVeryVeryEnd' on input line 161.
+(rerunfilecheck)             Checksum: 995FD9FA52DCE9718E361B0885A8C6AD;136.
+Package atveryend Info: Empty hook `AtVeryVeryEnd' on input line 170.
  ) 
 Here is how much of TeX's memory you used:
- 6090 strings out of 493633
- 93272 string characters out of 3143378
- 186854 words of memory out of 3000000
- 9327 multiletter control sequences out of 15000+200000
+ 6096 strings out of 493633
+ 93462 string characters out of 3143378
+ 186958 words of memory out of 3000000
+ 9332 multiletter control sequences out of 15000+200000
  42255 words of font info for 80 fonts, out of 3000000 for 9000
  831 hyphenation exceptions out of 8191
- 29i,9n,28p,860b,409s stack positions out of 5000i,500n,10000p,200000b,50000s
+ 29i,9n,28p,925b,305s stack positions out of 5000i,500n,10000p,200000b,50000s
 {/usr/local/texlive/2011/texmf-dist/fonts/enc/dvips/base/8r.enc}</usr/local/t
 exlive/2011/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi10.pfb></usr/local/te
 xlive/2011/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi5.pfb></usr/local/texl
@@ -439,10 +435,10 @@ st/fonts/type1/urw/times/utmb8a.pfb></usr/local/texlive/2011/texmf-dist/fonts/t
 ype1/urw/times/utmbi8a.pfb></usr/local/texlive/2011/texmf-dist/fonts/type1/urw/
 times/utmr8a.pfb></usr/local/texlive/2011/texmf-dist/fonts/type1/urw/times/utmr
 i8a.pfb>
-Output written on paper_template.pdf (3 pages, 157571 bytes).
+Output written on paper_template.pdf (3 pages, 161609 bytes).
 PDF statistics:
  124 PDF objects out of 1000 (max. 8388607)
  100 compressed objects within 1 object stream
- 21 named destinations out of 1000 (max. 500000)
- 43 words of extra memory for PDF output out of 10000 (max. 10000000)
+ 22 named destinations out of 1000 (max. 500000)
+ 35 words of extra memory for PDF output out of 10000 (max. 10000000)
 

@@ -82,11 +82,16 @@ In this work we wish to explore this problem by introducing two ideas
 \begin{itemize}
 \item Learning a basis space that represent motor actions 
 \item Joint estimation of both sensory and motor representations
+\item Representations that are flexible
 \end{itemize}
 
 
+In over actuated motor systems (high degrees of Freedom) training a controls model becomes challenging. While, there are many approaches of training such a model, we are interested in a framework that can help learn the dynamics of the many control systems an agent may have for many tasks. We propose that this can be achieved when a global objective is minimized simultaneously that learns  both sensory and motor systems. An added advantage of such representations is that, once learnt, the problem is no longer solving an optimization problem but inferring coefficients on a learnt basis. This mimics biological plasticity \cite{kandel2000principles} more closely and we argue that for a robotic agent, a hierarchical control system with some low-level reflex circuits that are modulated by high level control systems that are task dependent can effect a more versatile system.
+
+We take the specific case of percept stabilization as an example for the agent to have an invariant representation of an image (with or without objects). Through this example, we hope to motivate that a new class of models can be imagined for learning sensorimotor representations.
+
 \section{Model}
-\textbf{I} is the Image that falls on the retina (say). From this image, we learn our sensory representation \textbf{S}. From \textbf{S}, we infer our representation \textbf{$\alpha$}. We then apply a matrix transformation $\mathcal{G}$ that takes us from the sensory space to the motor actuator space. Here, we learn a motor representation \textbf{M} and the coefficients \textbf{$\beta$} are not inferred but are a transformation based on the sensory estimate. The transformation $\mathcal{F}$ tries to describe the complex non-linear coupling that links motor actions to changes in sensory states. This is complex and nonlinear because the same action performed at different times depending on the sensory state of the world can have completely different outcomes, here in lies the challenge of working with this problem
+\textbf{I} is the Image that falls on the retina (say). From this image, we learn our sensory representation \textbf{S}. From \textbf{S}, we infer our representation \textbf{$\alpha$}. We then apply a matrix transformation $\mathcal{G}$ that takes us from the sensory space to the motor actuator space. Here, we learn a motor representation \textbf{M} and the coefficients \textbf{$\beta$} are not inferred but are a transformation based on the sensory estimate. The transformation $\mathcal{F}$ lets us go from the Motor actuator space to transforming our self, so that we can compute an error estimate. 
 
 \begin{figure}
 \includegraphics[scale=0.6]{sesemo1.png}
@@ -97,10 +102,11 @@ In our case, we define the objective to be tracking a point light source in a vi
 
 \begin{eqnarray}
 \min_{S,\alpha^{t}} \| I - S\alpha^{t} \|_{2} + \lambda \| \alpha^{t} \|_{1}\\
-\min_{G,M}  \| dx - (center + \beta_{t+1}^{T}M ) \|_{2} + \|G \|_{2}\\
+\min_{G,M}  \| dx - (center + \mathcal{F} \beta_{t+1}^{T}M ) \|_{2} + \|G \|_{2}\\
 \textit{where}\\
 \beta_{t+1} = \alpha_{t} G
 \end{eqnarray}
+
 
 The way we go about solving the various parameters is by solving the problem in stages. The interesting idea with this model is that the sensory representation can be learnt independently as well with little loss of generality. For the rest of this work, we will not describe talking about learning the Sensory representations and focus on trying to learn the Motor basis with coefficients that are not inferred but are transformed (G) versions of inferred sensory coefficients. For our experiments we also fix our Sensory basis (S) to be a bunch of vectors that point in eight different directions that the light source may have traveled from the previous frame.
 
@@ -128,7 +134,7 @@ The results of our experiments are summarized in the table below. Row 1 describe
    %\topcaption{Table captions are better up top} % requires the topcapt package
    \begin{tabular}{@{} lcr @{}} % Column formatting, @{} suppresses leading/trailing space
       \multicolumn{2}{c}{A Comparison of Models } \\
-      \textbf{Model}    & \textbf{Error} (\$)\\
+      \textbf{Model}    & \textbf{Euclidean Error} \\
       \hline
       M      & 68.01 \\                
       M,G       &  13.95 \\
@@ -143,16 +149,19 @@ The results of our experiments are summarized in the table below. Row 1 describe
 
 We present preliminary work in trying to explore a model that tries to learn a motor representation to track an object based on its sensory representations. We show that a simple model can be learnt without having to learn the effects of the motor actions on the sensory space directly, which is a high dimensional, non-linear and complex space. We argue that by posing problems in this way with a global objective, we can explore various parts of the control space effectively because it is bounded by the task and the sensory representation. Similarly, the sensory representation that is learnt (not done in this work) is also directed towards action as opposed to a representation that is purely for redundancy reduction (compression) or to ask questions such as object recognition.
 
-Future work, can look towards extending this model to more complicated examples such as tracking real world objects with clutter and background noise. Longer term temporal dependencies in both sensory and motor representations can and should be learnt. Exploring complex planning strategies on a motor representation by combinatorically arranging motor basis is also a direction that needs to be explored that biology has learnt to solve in higher mammals such as macaques, dolphins and humans.
+We note that, our model as it stands, is still nascent. Extensions of this model would be along the following lines
+\begin{itemize}
+\item Sensory representations are spatio-temporal filters along the lines of Cadieu and Olshausen \cite{cadieu2012learning}
+\item One can then repose the problem of object tracking as minimizing motion energy. That is, we want to minimize the derivative of the phase coefficients of the model, so that a constant action can be chosen so as to stabilize the percept
+\item Reposing the problem in the above way also changes the role of $\mathcal{F}$.  $\mathcal{F}$ is no longer a transformation of the self but a prediction of the percept from the motor system i.e. $\mathcal{P}(\alpha^{t+1} | \beta^{t+1})$. We then compare this estimate with $\mathcal{P}(\alpha^{t+1} | \alpha^{t}, S)$.
+\item A model such as the above is a loopy graphical model which can be quite challenging to train. But, a model such as the above is also biologically plausible with sensory systems making motor predictions and vice-versa. Further, a representational motor space can be more efficient to work with once trained.
+\end{itemize}
 
 \section{ Acknowledgments} 
 
-This work was done in close collaboration with Pulkit Agarwal, EECS, Berkeley. Discussions with Jitendra Malik and Tony Bell motivated a lot of this work as well. Special thanks to Pavan Ramkumar, Northwestern University for helping clarify a lot of ideas through discussions. Special thanks to Bruno Olshausen for urging us to think about sensorimotor representations. 
+Discussions with Jitendra Malik and Tony Bell motivated a lot of this work as well. Special thanks to Pavan Ramkumar, Northwestern University for helping clarify a lot of ideas through discussions. Special thanks to Bruno Olshausen for urging us to think about sensorimotor representations. We would also like to thank our respective funding agencies - Fulbright Scholar Program. NGA. NIH. UC Berkeley.
 
 All the code for this project can be found on our github\footnote{github.com/rctn/sesemo} link.
-
-\section{Acknowledgments}
-Ack - Bruno Olshausen. Funding agencies. 
 
 
 \bibliography{cs287_final}

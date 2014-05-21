@@ -1,4 +1,4 @@
-\begin{thebibliography}{6}
+\begin{thebibliography}{8}
 \providecommand{\natexlab}[1]{#1}
 \providecommand{\url}[1]{\texttt{#1}}
 \expandafter\ifx\csname urlstyle\endcsname\relax
@@ -11,12 +11,24 @@ Horace~B Barlow.
   messages.
 \newblock \emph{Sensory communication}, pages 217--234, 1961.
 
+\bibitem[Cadieu and Olshausen(2012)]{cadieu2012learning}
+Charles~F Cadieu and Bruno~A Olshausen.
+\newblock Learning intermediate-level representations of form and motion from
+  natural movies.
+\newblock \emph{Neural computation}, 24\penalty0 (4):\penalty0 827--866, 2012.
+
 \bibitem[Hubel and Wiesel(1968)]{hubel1968receptive}
 David~H Hubel and Torsten~N Wiesel.
 \newblock Receptive fields and functional architecture of monkey striate
   cortex.
 \newblock \emph{The Journal of physiology}, 195\penalty0 (1):\penalty0
   215--243, 1968.
+
+\bibitem[Kandel et~al.(2000)Kandel, Schwartz, Jessell,
+  et~al.]{kandel2000principles}
+Eric~R Kandel, James~H Schwartz, Thomas~M Jessell, et~al.
+\newblock \emph{Principles of neural science}, volume~4.
+\newblock McGraw-Hill New York, 2000.
 
 \bibitem[Krizhevsky et~al.(2012)Krizhevsky, Sutskever, and
   Hinton]{krizhevsky2012imagenet}
