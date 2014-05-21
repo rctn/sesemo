@@ -66,17 +66,18 @@
 
 \maketitle
 
-\begin{abstract}
-\end{abstract}
+%\begin{abstract}
+%\end{abstract}
 
 \IEEEpeerreviewmaketitle
 
+Redundancy reduction \cite{barlow1961possible}, edge detection \cite{hubel1968receptive}  and hierarchical representations \cite{krizhevsky2012imagenet} have been the main stay for lot of work in computer vision and vision neuroscience to represent sensory data. But, these representations do not directly lend themselves to action. It has been hypothesized \cite{o2001sensorimotor} that brain probably represents sensory information in a way that helps an organism to act in the world.  
 
+Philipona and O'Regan \cite{philipona2003there,philipona2003perception} showed that the joint manifold of sensory and action space taken together has a lower dimensionality than that obtained by simply adding the dimensions of motor and sensory spaces. An observation which explains this is that motion of an object in the world and the equal but opposite motion of the organism with the object being stationary leads to the same sensory percept. It`s the relative motion which matters. In other words, sensory and motor spaces are `compensable'. This insight is probably employed by organisms to achieve stability of percept. For example, even when we humans are moving we perceive the world to be stationary. 
 
+In this work we consider the problem of jointly learning sensory and motor representations which would allow an agent to act in its environment. We assume that agent has no apriori knowledge of it's kinematic model nor does it have any meaningful representations of it's sensory stimulus, i.e. the agent is the state of `tabula rasa'.  
 
-Redundancy reduction \cite{barlow1961possible}, edge detection \cite{hubel1968receptive}  and hierarchical representations \cite{krizhevsky2012imagenet} have been the main stay for lot of work in computer vision and vision neuroscience to represent sensory data. But, these representations do not directly lend themselves to action. It has been argued elsewhere \cite{o2001sensorimotor} that what the brain probably codes for are an organism's sensorimotor contingencies.  
-
-Work by Philipona and O'Regan \cite{philipona2003there,philipona2003perception} showed that the dimensionality of the manifold of compensable actions is smaller than the dimensionality of the sensory or motor spaces. How then can we go about building a model that models the manifold of the sensory space but with knowledge of it's relationship with the motor system? 
+How then can we go about building a model that models the manifold of the sensory space but with knowledge of it's relationship with the motor system? 
 
 In this work we wish to explore this problem by introducing two ideas 
 \begin{itemize}
