@@ -119,7 +119,7 @@ In order to stabilize the percept, at every time step the agent must move in a w
 \end{eqnarray}
 where, $\mathcal{F}$ is the transformation from the motor space to sensory parameter space and $H_{t-i}$ is the effect of the sensory parameters inferred at time t-i on the prediction of time point t+1, and T is the number of past time steps used to make such a prediction. 
 
-In order to learn the sensorimotor representation the agent optimizes the following:
+In order to learn the sensorimotor representation the agent optimizes the following (along with eq(1)-(3)):
 \begin{eqnarray}
 \min_{F,M,G,\tau} \| \alpha^{t+1} - \hat{\alpha^{t+1}} \|_{2} \\
 \nonumber \textit{s.t.} \hspace{3mm} \forall i \sum_{j}  |G_{ij}| = c_1  \hspace{2mm}, \forall k \sum_{l}  |\mathcal{F}_{kl}| = c_2 
