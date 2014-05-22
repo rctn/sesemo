@@ -25,7 +25,7 @@
 \title{Learning Simultaneous Sensory and Motor Representations- (SESEMO)}
 
 % You will get a Paper-ID when submitting a pdf file to the conference system
-\author{Berkeley Kids}
+\author{Anonymous}
 
 %\author{\authorblockN{Michael Shell}
 %\authorblockA{School of Electrical and\\Computer Engineering\\
@@ -98,7 +98,7 @@ The main ideas proposed in this work can be summarized as following:
 \section{Model}
 \begin{figure}[t!]
 \centering
-\subfloat{\includegraphics[width=0.75\linewidth]{sesemo1.pdf} } 
+\subfloat{\includegraphics[width=0.9\linewidth]{sesemo1.pdf} } 
 \caption{This figure depicts a graphical model representation of the sensory-motor system of the agent. Please refer to the text for more details. Note, the term graphical model is used in a loose sense.}
 \label{fig:sesemo}
 \end{figure}
@@ -130,13 +130,7 @@ which forces the agent's prediction $(\hat{\alpha^{t+1}})$ to be close to the ob
 \section{Discussion}
 Perceptual stabilization is a problem that many animals have solved. In birds, eye movements are replaced with compensatory head movements. In this work, we wish to explore a framework that learns in sensorimotor loops. While the model is nascent, thinking of learning sensory and motor representations simultaneously can be a way to model both the statistics of the world using the same principles of efficient coding as in sensory representations.
 
-
-\section{ Acknowledgments} 
-
-Discussions with Jitendra Malik and Tony Bell motivated a lot of this work as well. Special thanks to Pavan Ramkumar, Northwestern University for helping clarify a lot of ideas through discussions. Special thanks to Bruno Olshausen for urging us to think about sensorimotor representations. We would also like to thank our respective funding agencies - Fulbright Scholar Program. NGA. NIH. UC Berkeley.
-
-All the code for this project can be found on our github\footnote{github.com/rctn/sesemo} link.
-
+While the model is nascent, thinking of learning sensory and motor representations simultaneously can be a way to model the statistics of the world and exploring the control space efficiently. Future models can hope to explore ideas from hierarchical control to explore longer trajectory primitives to be learnt. An important consideration for such problems is to explore the temporal nature of feedback between the two systems. The sampling rate of the sensory and motor system could vary drastically between agents.
 
 \bibliography{cs287_final}
 \bibliographystyle{plainnat}
