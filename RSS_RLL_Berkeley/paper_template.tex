@@ -125,7 +125,7 @@ In order to learn the sensorimotor representation the agent optimizes the follow
 \nonumber \textit{s.t.} \hspace{3mm} \forall i \sum_{j}  |G_{ij}| = c_1  \hspace{2mm}, \forall k \sum_{l}  |\mathcal{F}_{kl}| = c_2 
 \end{eqnarray}
 
-which forces the agent's prediction $(\hat{\alpha^{t+1}})$ to be close to the observed percept$({\alpha^{t+1}})$. Further, we constrain the row sums of $G$ and $\mathcal{F}$ $(c_1, c_2 $ are constants) to learn sparse $G$, $\mathcal{F}$ respectively. These matrices being sparse in turn enforces that $\beta,\hat{\alpha} $ are also sparse.
+which forces the agent's prediction $(\hat{\alpha^{t+1}})$ to be close to the observed percept$({\alpha^{t+1}})$. Further, we constrain the row sums of $G$ and $\mathcal{F}$ $(c_1, c_2 $ are constants) to learn sparse $G$, $\mathcal{F}$ respectively. These matrices being sparse in turn enforces that $\beta,\hat{\alpha} $ are also sparse. It is important to note that the constraints on M, are the constraints on the actuator - that is limits on forces that be applied (in this case).
 
 \section{Discussion}
 Perceptual stabilization is a problem that many if not most animals have solved. In birds, eye movements are replaced with compensatory head movements. In this work, we wish to explore a framework that learns in sensorimotor loops. There is paucity of models that try to describe learning in these two seemingly disparate domains. 
