@@ -75,76 +75,40 @@ Redundancy reduction \cite{barlow1961possible}, edge detection \cite{hubel1968re
 
 Philipona and O'Regan \cite{philipona2003there,philipona2003perception} showed that the joint manifold of sensory and action space taken together has a lower dimensionality than that obtained by simply adding the dimensions of motor and sensory spaces. An observation which explains this is that motion of an object in the world and the equal but opposite motion of the organism with the object being stationary leads to the same sensory percept. It`s the relative motion which matters. In other words, sensory and motor spaces are `compensable'. This insight is probably employed by organisms to achieve stability of percept. For example, even when we humans are moving we perceive the world to be stationary. 
 
-In this work we consider the problem of jointly learning sensory and motor representations which would allow an agent to act in its environment. We assume that agent has no apriori knowledge of it's kinematic model nor does it have any meaningful representations of it's sensory stimulus, i.e. the agent is the state of `tabula rasa'.  
 
-How then can we go about building a model that models the manifold of the sensory space but with knowledge of it's relationship with the motor system? 
+In this work we consider the problem of joint sensory and motor representations with in the context of percept stabilization.  This goal is interesting because it lets the agent explore building a sensory representation that is coupled with its actions. We assume that agent has no apriori knowledge of its kinematic model nor does it have any meaningful representations of its sensory stimulus, i.e. the agent is in the state of `tabula rasa'.  
 
-In this work we wish to explore this problem by introducing two ideas 
+
+In overactuated motor systems (high degrees of freedom/redundancy) training a control model becomes challenging. One way to approach this problem is through models proposed that explore the control space through inverse kinematics [Rolfe et al]. Other works have explored this idea using concepts of motor primitives [Schaal et al] , but they are not learnt from the statistics of the motion that an agent has to perform to achieve a goal.  Here, we wish to explore the idea of learning motor primitives that can then be composed sequentially to perform actions.
+
+An added advantage of such representations is that, once learnt, the problem is no longer solving an optimization problem but inferring coefficients on a learnt basis. That is to say, at each time step we no longer have to specify the control sequence for each controller but the problem is now of choosing a basis element that then provides us with a control sequence. Since this basis is in a far smaller space, we expect that this model will perform faster. This also mimics biological systems, where you have spinal reflexes and cortical motor systems that combine to give you complex motions\cite{kandel2000principles}. 
+
+Thus, we argue that for a robotic agent, a hierarchical control system [Todorov] with some low-level reflex circuits that are modulated by high level control systems that are task dependent can effect a more versatile system.
+
+We explore this problem by introducing the following ideas 
 \begin{itemize}
 \item Learning a basis space that represent motor actions 
 \item Joint estimation of both sensory and motor representations
-\item Representations that are flexible
+\item Representations that are flexible (e.g. faulty actuator, etc)
 \end{itemize}
 
 
-In over actuated motor systems (high degrees of Freedom) training a controls model becomes challenging. While, there are many approaches of training such a model, we are interested in a framework that can help learn the dynamics of the many control systems an agent may have for many tasks. We propose that this can be achieved when a global objective is minimized simultaneously that learns  both sensory and motor systems. An added advantage of such representations is that, once learnt, the problem is no longer solving an optimization problem but inferring coefficients on a learnt basis. This mimics biological plasticity \cite{kandel2000principles} more closely and we argue that for a robotic agent, a hierarchical control system with some low-level reflex circuits that are modulated by high level control systems that are task dependent can effect a more versatile system.
-
-We take the specific case of percept stabilization as an example for the agent to have an invariant representation of an image (with or without objects). Through this example, we hope to motivate that a new class of models can be imagined for learning sensorimotor representations.
-
 \section{Model}
-\textbf{I} is the Image that falls on the retina (say). From this image, we learn our sensory representation \textbf{S}. From \textbf{S}, we infer our representation \textbf{$\alpha$}. We then apply a matrix transformation $\mathcal{G}$ that takes us from the sensory space to the motor actuator space. Here, we learn a motor representation \textbf{M} and the coefficients \textbf{$\beta$} are not inferred but are a transformation based on the sensory estimate. The transformation $\mathcal{F}$ lets us go from the Motor actuator space to transforming our self, so that we can compute an error estimate. 
+\textbf{I(t)} is the sequence of images (frames) that fall on the retina (say). We then learn a sparse generative sensory representation along the lines of Cadieu \& Olshausen  \cite{cadieu2012learning} that tries to account for both form and motion separately using complex basis elements.
 
-\begin{figure}
-\includegraphics[scale=0.6]{sesemo1.png}
-\caption{A loosely defined graphical model that describes the problem sensorimotor representations. }
-\end{figure}
+Thus, for a given sequence of images we infer our coefficients $\alpha^{t}$ and $\gamma^{t}$ that represent motion and form respectively. The matrix $\mathcal{G}$ transforms the motion component of the sensory percept to the motor primitive space $\beta^{t+1}$ thus, choosing the next action to be made for percept stabilization. 
 
-In our case, we define the objective to be tracking a point light source in a virtual world. We are given a camera plane and two motors that control the camera. Further, we parameterize the motor space. That is, to move the camera in the x-y plane all we have to do is apply varying powers to the two different motors. In stead of solving for the appropriate amount of power at each time step, we put forward an idea of motor representation for controlling the camera. This motor representation is a collection of tuples that specify the power to the two different motors. 
+The action that is performed on the agent (self) is then given by product of the vector $beta^{t+1}$ and motor basis $mathcal{M}$. 
+
+The last step that completes the loop is to get an estimate of how the action chosen effects the agent. The matrix $mathcal{F}$ transforms the action performed (actuator space) to the sensory (motion) percept space.
 
 \begin{eqnarray}
-\min_{S,\alpha^{t}} \| I - S\alpha^{t} \|_{2} + \lambda \| \alpha^{t} \|_{1}\\
-\min_{G,M}  \| dx - (center + \mathcal{F} \beta_{t+1}^{T}M ) \|_{2} + \|G \|_{2}\\
-\textit{where}\\
-\beta_{t+1} = \alpha_{t} G
+\min_{F,M,G} \| \alpha^{t+1} - \hat{\alpha^{t+1}} \|_{2} \textit{s.t.} \\ \lambda_1(\beta^{t+1})  \\
+ \lambda_2\|G\| + \lambda_3\|F\| \\
+\beta^{t+1} = \mathcal{G} \alpha^{t}\\
+\hat{\alpha^{t+1}} = \sum_{i=0}^{T-1} D_{i} \alpha(T-i) + \mathcal{F}\mathcal{M}\beta^{t+1} \\
 \end{eqnarray}
 
-
-The way we go about solving the various parameters is by solving the problem in stages. The interesting idea with this model is that the sensory representation can be learnt independently as well with little loss of generality. For the rest of this work, we will not describe talking about learning the Sensory representations and focus on trying to learn the Motor basis with coefficients that are not inferred but are transformed (G) versions of inferred sensory coefficients. For our experiments we also fix our Sensory basis (S) to be a bunch of vectors that point in eight different directions that the light source may have traveled from the previous frame.
-
-An important point to note is that our model is not completely without supervision. For the model to learn the consequences of it's motor actions we use a teacher signal (dx) that tells the system how the motor actions effect the state of the system. Another point of interest is that we begin our system with the agent not knowing the dynamics of it's control system. That is, it does not know what forward/backward/left/right are but by minimizing a global objective function it learns how to control it's motor to attain specific trajectories. 
-
-The data in this case are 10000 samples of a point light source moving according to the following equation 
-\begin{eqnarray}
-r = a + b cos(k \theta),\textit{where } \theta = [ -\pi, \pi ] \\
-x = r cos(\theta)\\
-y = r sin(\theta)\\
-\end{eqnarray}
-
-To solve (equation 2.2) we take our current estimate of $\alpha$ and multiply it with matrix $G$ (which is either learnt or fixed as a random matrix). This is our estimate of $\beta$. We then solve for M,G using BFGS as the solver. The model learns pretty quickly and takes only a few 100 samples to converge. We then test our model on a different value of k in the above equation for about 100 samples.
-
-The results of our experiments are summarized in the table below. Row 1 describes the experiments with learning only the Motor basis. Row 2 describes experiments with learning both the motor basis M and the sensorimotor transform G. Row 3 describes experiments with learning both the Motor basis (M) and the sensorimotor transform G but with an extra constraint on minimizing the norm of G. From our experiments, this was the best model. Systemic errors occurred during the sharp turns that we see in the data, we hypothesize that with a more sophisticated planning component in the motor planning part of the model, this can be overcome. The motor space learnt tiles the set of directions we would want the camera to move in, increasing the over completeness resulted in a more granular representation of the 3D space.
-
-\begin{figure}
-\includegraphics[scale=0.6]{train1.png}
-\caption{A loosely defined graphical model that describes the problem sensorimotor representations. }
-\end{figure}
-
-% Requires the booktabs if the memoir class is not being used
-\begin{table}[htbp]
-   \centering
-   %\topcaption{Table captions are better up top} % requires the topcapt package
-   \begin{tabular}{@{} lcr @{}} % Column formatting, @{} suppresses leading/trailing space
-      \multicolumn{2}{c}{A Comparison of Models } \\
-      \textbf{Model}    & \textbf{Euclidean Error} \\
-      \hline
-      M      & 68.01 \\                
-      M,G       &  13.95 \\
-      M,$\|G\|_{2}$       & 0.58 \\
-      
-   \end{tabular}
-   \caption{The table depicts the errors we see while learning variations of the model.}
-   \label{tab:booktabs}
-\end{table}
 
 \section{Discussion}
 
