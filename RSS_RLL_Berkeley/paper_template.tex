@@ -79,11 +79,11 @@ Philipona and O'Regan \cite{philipona2003there,philipona2003perception} showed t
 In this work we consider the problem of joint sensory and motor representations with in the context of percept stabilization.  This goal is interesting because it lets the agent explore building a sensory representation that is coupled with its actions. We assume that agent has no apriori knowledge of its kinematic model nor does it have any meaningful representations of its sensory stimulus, i.e. the agent is in the state of `tabula rasa'.  
 
 
-In overactuated motor systems (high degrees of freedom/redundancy) training a control model becomes challenging. One way to approach this problem is through models proposed that explore the control space through inverse kinematics [Rolfe et al]. Other works have explored this idea using concepts of motor primitives [Schaal et al] , but they are not learnt from the statistics of the motion that an agent has to perform to achieve a goal.  Here, we wish to explore the idea of learning motor primitives that can then be composed sequentially to perform actions.
+In overactuated motor systems (high degrees of freedom/redundancy) training a control model becomes challenging. One way to approach this problem is through models proposed that explore the control space through inverse kinematics \cite{rolf2012efficient}. Other works have explored this idea using concepts of motor primitives \cite{schaal2005learning} , but they are not learnt from the statistics of the motion that an agent has to perform to achieve a goal.  Here, we wish to explore the idea of learning motor primitives that can then be composed sequentially to perform actions.
 
 An added advantage of such representations is that, once learnt, the problem is no longer solving an optimization problem but inferring coefficients on a learnt basis. That is to say, at each time step we no longer have to specify the control sequence for each controller but the problem is now of choosing a basis element that then provides us with a control sequence. Since this basis is in a far smaller space, we expect that this model will perform faster. This also mimics biological systems, where you have spinal reflexes and cortical motor systems that combine to give you complex motions\cite{kandel2000principles}. 
 
-Thus, we argue that for a robotic agent, a hierarchical control system [Todorov] with some low-level reflex circuits that are modulated by high level control systems that are task dependent can effect a more versatile system.
+Thus, we argue that for a robotic agent, a hierarchical control system with some low-level reflex circuits that are modulated by high level control systems that are task dependent can effect a more versatile system. This idea gains favor in the literature of optimal control theory as well \cite{todorov2004optimality}
 
 We explore this problem by introducing the following ideas 
 \begin{itemize}
@@ -94,33 +94,28 @@ We explore this problem by introducing the following ideas
 
 
 \section{Model}
-\textbf{I(t)} is the sequence of images (frames) that fall on the retina (say). We then learn a sparse generative sensory representation along the lines of Cadieu \& Olshausen  \cite{cadieu2012learning} that tries to account for both form and motion separately using complex basis elements.
+\textbf{I(t)} is the sequence of images (frames) that fall on the retina (say). We then learn a sparse generative sensory representation along the lines of Cadieu \& Olshausen  \cite{cadieu2012learning} that tries to account for both form and motion separately using complex basis elements. For the sake of brevity and simplicity, we begin with assumed a trained sensory representation. We refer the reader to \cite{cadieu2012learning} for more details for its training.
 
 Thus, for a given sequence of images we infer our coefficients $\alpha^{t}$ and $\gamma^{t}$ that represent motion and form respectively. The matrix $\mathcal{G}$ transforms the motion component of the sensory percept to the motor primitive space $\beta^{t+1}$ thus, choosing the next action to be made for percept stabilization. 
 
-The action that is performed on the agent (self) is then given by product of the vector $beta^{t+1}$ and motor basis $mathcal{M}$. 
+The action that is performed on the agent (self) is then given by product of the vector $beta^{t+1}$ and motor basis $\mathcal{M}$. 
 
-The last step that completes the loop is to get an estimate of how the action chosen effects the agent. The matrix $mathcal{F}$ transforms the action performed (actuator space) to the sensory (motion) percept space.
+The last step that completes the loop is to get an estimate of how the action chosen effects the agent. The matrix $\mathcal{F}$ transforms the action performed (actuator space) to the sensory (motion) percept space.
 
 \begin{eqnarray}
-\min_{F,M,G} \| \alpha^{t+1} - \hat{\alpha^{t+1}} \|_{2} \textit{s.t.} \\ \lambda_1(\beta^{t+1})  \\
- \lambda_2\|G\| + \lambda_3\|F\| \\
+\min_{F,M,G,\tau} \| \alpha^{t+1} - \hat{\alpha^{t+1}} \|_{2} \textit{s.t.} \\ 
+\sum_{i} \lambda_2^{i} G^{i}  \\
+ \textit{where $\beta^{t+1}$ is computed as follows} \nonumber \\
 \beta^{t+1} = \mathcal{G} \alpha^{t}\\
-\hat{\alpha^{t+1}} = \sum_{i=0}^{T-1} D_{i} \alpha(T-i) + \mathcal{F}\mathcal{M}\beta^{t+1} \\
+\hat{\alpha}^{t+1} = \sum_{i=0t}^{t-1}  e^{-\tau i} \alpha(t-i) + \mathcal{F}\mathcal{M}\beta^{t+1} \\
 \end{eqnarray}
 
+The objective that we wish to minimize is defined in Eq 1. Eq 2 defines the constraint that we require the columns of G (defined by $G^{i}$ to be sparse so that our inferred $\alpha$ results in a sparse $\beta$. At this point, we explore no explicit constraints on F other than those specified above. We compute $\beta^{t+1}$ as a transformation of $\alpha^{t}$ as described in Eq 3. We compute our expected value of $\hat{\alpha}^{t+1}$ as a weighted sum of previous $\alpha^{t-i}$ and a transformation of our current action into a sensory percept by the matrix $\mathcal{F}$ as seen in Eq 4 where the exponent helps to impose a decaying weight for oldest time frame. 
 
 \section{Discussion}
 
-We present preliminary work in trying to explore a model that tries to learn a motor representation to track an object based on its sensory representations. We show that a simple model can be learnt without having to learn the effects of the motor actions on the sensory space directly, which is a high dimensional, non-linear and complex space. We argue that by posing problems in this way with a global objective, we can explore various parts of the control space effectively because it is bounded by the task and the sensory representation. Similarly, the sensory representation that is learnt (not done in this work) is also directed towards action as opposed to a representation that is purely for redundancy reduction (compression) or to ask questions such as object recognition.
 
-We note that, our model as it stands, is still nascent. Extensions of this model would be along the following lines
-\begin{itemize}
-\item Sensory representations are spatio-temporal filters along the lines of Cadieu and Olshausen \cite{cadieu2012learning}
-\item One can then repose the problem of object tracking as minimizing motion energy. That is, we want to minimize the derivative of the phase coefficients of the model, so that a constant action can be chosen so as to stabilize the percept
-\item Reposing the problem in the above way also changes the role of $\mathcal{F}$.  $\mathcal{F}$ is no longer a transformation of the self but a prediction of the percept from the motor system i.e. $\mathcal{P}(\alpha^{t+1} | \beta^{t+1})$. We then compare this estimate with $\mathcal{P}(\alpha^{t+1} | \alpha^{t}, S)$.
-\item A model such as the above is a loopy graphical model which can be quite challenging to train. But, a model such as the above is also biologically plausible with sensory systems making motor predictions and vice-versa. Further, a representational motor space can be more efficient to work with once trained.
-\end{itemize}
+
 
 \section{ Acknowledgments} 
 

@@ -1,4 +1,4 @@
-\begin{thebibliography}{8}
+\begin{thebibliography}{11}
 \providecommand{\natexlab}[1]{#1}
 \providecommand{\url}[1]{\texttt{#1}}
 \expandafter\ifx\csname urlstyle\endcsname\relax
@@ -57,5 +57,22 @@ David Philipona, Jk~O'regan, J-P Nadal, and Olivier Coenen.
   multimodal sensors and effectors.
 \newblock In \emph{Advances in neural information processing systems}, page
   None, 2003{\natexlab{b}}.
+
+\bibitem[Rolf and Steil(2012)]{rolf2012efficient}
+Matthias Rolf and Jochen~J Steil.
+\newblock Efficient exploratory learning of inverse kinematics on a bionic
+  elephant trunk.
+\newblock 2012.
+
+\bibitem[Schaal et~al.(2005)Schaal, Peters, Nakanishi, and
+  Ijspeert]{schaal2005learning}
+Stefan Schaal, Jan Peters, Jun Nakanishi, and Auke Ijspeert.
+\newblock Learning movement primitives.
+\newblock In \emph{Robotics Research}, pages 561--572. Springer, 2005.
+
+\bibitem[Todorov(2004)]{todorov2004optimality}
+Emanuel Todorov.
+\newblock Optimality principles in sensorimotor control.
+\newblock \emph{Nature neuroscience}, 7\penalty0 (9):\penalty0 907--915, 2004.
 
 \end{thebibliography}
