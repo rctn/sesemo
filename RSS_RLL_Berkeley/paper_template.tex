@@ -116,7 +116,7 @@ In order to stabilize the percept, at every time step the agent must move in a w
 where, $\mathcal{F}$ is the transformation from the motor space to sensory parameter space and $H_{t-i}$ is the effect of the sensory parameters inferred at time t-i on the prediction of time point t+1.
 \begin{eqnarray}
 \min_{F,M,G,\tau} \| \alpha^{t+1} - \hat{\alpha^{t+1}} \|_{2} \\
-\nonumber \textit{s.t.} \sum_{i} \lambda_2^{i} G^{i} 
+\nonumber \textit{s.t.} \hspace{3mm} \forall i \sum_{j}  G_{ij} = c_1  \hspace{2mm}, \forall k \sum_{l}  \mathcal{F}_{kl} = c_2 
 \end{eqnarray}
 
 The objective that we wish to minimize is defined in Eq 1. Eq 2 defines the constraint that we require the columns of G (defined by $G^{i}$ to be sparse so that our inferred $\alpha$ results in a sparse $\beta$. At this point, we explore no explicit constraints on F other than those specified above. We compute $\beta^{t+1}$ as a transformation of $\alpha^{t}$ as described in Eq 3. We compute our expected value of $\hat{\alpha}^{t+1}$ as a weighted sum of previous $\alpha^{t-i}$ and a transformation of our current action into a sensory percept by the matrix $\mathcal{F}$ as seen in Eq 4 where the exponent helps to impose a decaying weight for oldest time frame. 
