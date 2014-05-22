@@ -103,7 +103,11 @@ The main ideas proposed in this work can be summarized as following:
 \label{fig:sesemo}
 \end{figure}
 
-Fig \ref{fig:sesemo} depicts the sensory-motor system of the agent. \textbf{X(t)} is the sequence of images (frames) that fall on the retina (say). We then learn a sparse generative sensory representation along the lines of Cadieu \& Olshausen  \cite{cadieu2012learning} that tries to account for both form ($\gamma^{t})$  and motion$(\alpha^{t})$ separately using complex basis elements. We refer the reader to \cite{cadieu2012learning} for more details for its training.
+Fig \ref{fig:sesemo} depicts the sensory-motor system of the agent. \textbf{X(t)} is the sequence of images (frames) that fall on the retina (say). We then learn a sparse generative sensory representation along the lines of Cadieu \& Olshausen  \cite{cadieu2012learning} that tries to account for both form ($\gamma^{t})$  and motion$(\alpha^{t})$ separately using complex basis elements. This is expressed as following:
+\begin{eqnarray}
+X(t) = \sum_i \mathcal{R}\{z_i(t)S_i\} + n(t)
+\end{eqnarray}
+where, $z_i(t) = a(t)e^{j\phi t}$, $\mathcal{R}$ denotes the real part of the complex number and n(t) is white gaussian noise. We refer the reader to \cite{cadieu2012learning} for more details for its training.
 
 $\mathcal{G}$ transforms the motion component of the sensory percept to the motor primitive space $\beta^{t+1}$ and the input to the actuators is given by $M\beta^{t+1}$.
 \begin{eqnarray}
@@ -111,7 +115,7 @@ $\mathcal{G}$ transforms the motion component of the sensory percept to the moto
 \end{eqnarray}
 In order to stabilize the percept, at every time step the agent must move in a way which would compensate for the change in visual stimulus caused due to motion of objects in the environment. Consequently, at every time step, the agent tries to predict the sensory percept which it expects to see at the next time step(i.e. $\hat{\alpha}^{t+1}$). Note, in contrast to predicting the next image frame in the pixel space, the agent predicts in the parameter space - i.e the agent predicts the sensory percept it would infer at the next time step instead of the pixel values themselves. This prediction is expressed as following:
 \begin{eqnarray}
-\hat{\alpha}^{t+1} = \sum_{i=t-T+1}^{t-1}  H_{t-i} \alpha(t-i) + \mathcal{F}\mathcal{M}\beta^{t+1} 
+\hat{\alpha}^{t+1} = \sum_{i=t-T+1}^{t-1}  H_{t-i} \alpha^{(t-i)} + \mathcal{F}\mathcal{M}\beta^{t+1} 
 \end{eqnarray}
 where, $\mathcal{F}$ is the transformation from the motor space to sensory parameter space and $H_{t-i}$ is the effect of the sensory parameters inferred at time t-i on the prediction of time point t+1, and T is the number of past time steps used to make such a prediction. 
 
@@ -121,7 +125,7 @@ In order to learn the sensorimotor representation the agent optimizes the follow
 \nonumber \textit{s.t.} \hspace{3mm} \forall i \sum_{j}  |G_{ij}| = c_1  \hspace{2mm}, \forall k \sum_{l}  |\mathcal{F}_{kl}| = c_2 
 \end{eqnarray}
 
-which forces the agent's prediction $(\hat{\alpha^{t+1}})$ to be close to the observed percept$({\alpha^{t+1}})$. Further, we constrain the row sums of $G$ and $\mathcal{F}$ to learn sparse $G$, $\mathcal{F}$ respectively. These matrices being sparse in turn enforces that $\beta,\hat{\alpha} $ are also sparse.
+which forces the agent's prediction $(\hat{\alpha^{t+1}})$ to be close to the observed percept$({\alpha^{t+1}})$. Further, we constrain the row sums of $G$ and $\mathcal{F}$ $(c_1, c_2 $ are constants) to learn sparse $G$, $\mathcal{F}$ respectively. These matrices being sparse in turn enforces that $\beta,\hat{\alpha} $ are also sparse.
 
 \section{Discussion}
 Perceptual stabilization is a problem that many animals have solved. In birds, eye movements are replaced with compensatory head movements. In this work, we wish to explore a framework that learns in sensorimotor loops. While the model is nascent, thinking of learning sensory and motor representations simultaneously can be a way to model both the statistics of the world using the same principles of efficient coding as in sensory representations.
