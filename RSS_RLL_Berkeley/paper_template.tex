@@ -106,25 +106,23 @@ The main ideas proposed in this work can be summarized as following:
 Fig \ref{fig:sesemo} depicts the sensory-motor system of the agent. \textbf{X(t)} is the sequence of images (frames) that fall on the retina (say). We then learn a sparse generative sensory representation along the lines of Cadieu \& Olshausen  \cite{cadieu2012learning} that tries to account for both form ($\gamma^{t})$  and motion$(\alpha^{t})$ separately using complex basis elements. We refer the reader to \cite{cadieu2012learning} for more details for its training.
 
 $\mathcal{G}$ transforms the motion component of the sensory percept to the motor primitive space $\beta^{t+1}$ and the input to the actuators is given by $M\beta^{t+1}$.
-\begin{eqnarray*}
+\begin{eqnarray}
 \beta^{t+1} = \mathcal{G} \alpha^{t}
-\end{eqnarray*}
+\end{eqnarray}
 In order to stabilize the percept, at every time step the agent must move in a way which would compensate for the change in visual stimulus caused due to motion of objects in the environment. Consequently, at every time step, the agent tries to predict the sensory percept which it expects to see at the next time step(i.e. $\hat{\alpha}^{t+1}$). Note, in contrast to predicting the next image frame in the pixel space, the agent predicts in the parameter space - i.e the agent predicts the sensory percept it would infer at the next time step instead of the pixel values themselves. This prediction is expressed as following:
-\begin{eqnarray*}
+\begin{eqnarray}
 \hat{\alpha}^{t+1} = \sum_{i=0t}^{t-1}  H_{t-i} \alpha(t-i) + \mathcal{F}\mathcal{M}\beta^{t+1} 
-\end{eqnarray*}
+\end{eqnarray}
 where, $\mathcal{F}$ is the transformation from the motor space to sensory parameter space and $H_{t-i}$ is the effect of the sensory parameters inferred at time t-i on the prediction of time point t+1.
 \begin{eqnarray}
-\min_{F,M,G,\tau} \| \alpha^{t+1} - \hat{\alpha^{t+1}} \|_{2} \textit{s.t.} \\ 
-\sum_{i} \lambda_2^{i} G^{i}  \\
- \textit{where $\beta^{t+1}$ is computed as follows} \nonumber \\
+\min_{F,M,G,\tau} \| \alpha^{t+1} - \hat{\alpha^{t+1}} \|_{2} \\
+\nonumber \textit{s.t.} \sum_{i} \lambda_2^{i} G^{i} 
 \end{eqnarray}
 
 The objective that we wish to minimize is defined in Eq 1. Eq 2 defines the constraint that we require the columns of G (defined by $G^{i}$ to be sparse so that our inferred $\alpha$ results in a sparse $\beta$. At this point, we explore no explicit constraints on F other than those specified above. We compute $\beta^{t+1}$ as a transformation of $\alpha^{t}$ as described in Eq 3. We compute our expected value of $\hat{\alpha}^{t+1}$ as a weighted sum of previous $\alpha^{t-i}$ and a transformation of our current action into a sensory percept by the matrix $\mathcal{F}$ as seen in Eq 4 where the exponent helps to impose a decaying weight for oldest time frame. 
 
 \section{Discussion}
-
-
+Perceptual stabilization is a problem that many animals have solved. In birds, eye movements are replaced with compensatory head movements. In this work, we wish to explore a framework that learns in sensorimotor loops. While the model is nascent, thinking of learning sensory and motor representations simultaneously can be a way to model both the statistics of the world using the same principles of efficient coding as in sensory representations.
 
 
 \section{ Acknowledgments} 
