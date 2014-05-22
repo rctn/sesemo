@@ -119,17 +119,19 @@ where, $\mathcal{F}$ is the transformation from the motor space to sensory param
 \nonumber \textit{s.t.} \sum_{i} \lambda_2^{i} G^{i} 
 \end{eqnarray}
 
-The objective that we wish to minimize is defined in Eq 1. Eq 2 defines the constraint that we require the columns of G (defined by $G^{i}$ to be sparse so that our inferred $\alpha$ results in a sparse $\beta$. At this point, we explore no explicit constraints on F other than those specified above. We compute $\beta^{t+1}$ as a transformation of $\alpha^{t}$ as described in Eq 3. We compute our expected value of $\hat{\alpha}^{t+1}$ as a weighted sum of previous $\alpha^{t-i}$ and a transformation of our current action into a sensory percept by the matrix $\mathcal{F}$ as seen in Eq 4 where the exponent helps to impose a decaying weight for oldest time frame. 
+The objective that we wish to minimize is defined in Eq 3. The constraint that we require the columns of G (defined by $G^{i}$ to be sparse so that our inferred $\alpha$ results in a sparse $\beta$. At this point, we explore no explicit constraints on F other than those specified above. We compute $\beta^{t+1}$ as a transformation of $\alpha^{t}$ as described in Eq 1. It is important to note that the constraints on M, are the constraints on the actuator - that is limits on forces that be applied (in this case).
 
 \section{Discussion}
-Perceptual stabilization is a problem that many animals have solved. In birds, eye movements are replaced with compensatory head movements. In this work, we wish to explore a framework that learns in sensorimotor loops. While the model is nascent, thinking of learning sensory and motor representations simultaneously can be a way to model both the statistics of the world using the same principles of efficient coding as in sensory representations.
+Perceptual stabilization is a problem that many if not most animals have solved. In birds, eye movements are replaced with compensatory head movements. In this work, we wish to explore a framework that learns in sensorimotor loops. There is paucity of models that try to describe learning in these two seemingly disparate domains. 
+
+While the model is nascent, thinking of learning sensory and motor representations simultaneously can be a way to model the statistics of the world and exploring the control space efficiently. Future models can hope to explore ideas from hierarchical control to explore longer trajectory primitives to be learnt. An important consideration for such problems is to explore the temporal nature of feedback between the two systems. The sampling rate of the sensory and motor system might vary drastically between agents.
 
 
 \section{ Acknowledgments} 
 
 Discussions with Jitendra Malik and Tony Bell motivated a lot of this work as well. Special thanks to Pavan Ramkumar, Northwestern University for helping clarify a lot of ideas through discussions. Special thanks to Bruno Olshausen for urging us to think about sensorimotor representations. We would also like to thank our respective funding agencies - Fulbright Scholar Program. NGA. NIH. UC Berkeley.
 
-All the code for this project can be found on our github\footnote{github.com/rctn/sesemo} link.
+All the preliminary code for this project can be found on our github\footnote{github.com/rctn/sesemo} link.
 
 
 \bibliography{cs287_final}
