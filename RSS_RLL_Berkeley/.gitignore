@@ -1,0 +1,7 @@
+*.pdf
+!sesemo1.pdf
+*.log
+*.gz
+*.out
+*.dvi
+*.blg
