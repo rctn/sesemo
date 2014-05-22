@@ -111,15 +111,17 @@ $\mathcal{G}$ transforms the motion component of the sensory percept to the moto
 \end{eqnarray}
 In order to stabilize the percept, at every time step the agent must move in a way which would compensate for the change in visual stimulus caused due to motion of objects in the environment. Consequently, at every time step, the agent tries to predict the sensory percept which it expects to see at the next time step(i.e. $\hat{\alpha}^{t+1}$). Note, in contrast to predicting the next image frame in the pixel space, the agent predicts in the parameter space - i.e the agent predicts the sensory percept it would infer at the next time step instead of the pixel values themselves. This prediction is expressed as following:
 \begin{eqnarray}
-\hat{\alpha}^{t+1} = \sum_{i=0t}^{t-1}  H_{t-i} \alpha(t-i) + \mathcal{F}\mathcal{M}\beta^{t+1} 
+\hat{\alpha}^{t+1} = \sum_{i=t-T+1}^{t-1}  H_{t-i} \alpha(t-i) + \mathcal{F}\mathcal{M}\beta^{t+1} 
 \end{eqnarray}
-where, $\mathcal{F}$ is the transformation from the motor space to sensory parameter space and $H_{t-i}$ is the effect of the sensory parameters inferred at time t-i on the prediction of time point t+1.
+where, $\mathcal{F}$ is the transformation from the motor space to sensory parameter space and $H_{t-i}$ is the effect of the sensory parameters inferred at time t-i on the prediction of time point t+1, and T is the number of past time steps used to make such a prediction. 
+
+In order to learn the sensorimotor representation the agent optimizes the following:
 \begin{eqnarray}
 \min_{F,M,G,\tau} \| \alpha^{t+1} - \hat{\alpha^{t+1}} \|_{2} \\
-\nonumber \textit{s.t.} \sum_{i} \lambda_2^{i} G^{i} 
+\nonumber \textit{s.t.} \hspace{3mm} \forall i \sum_{j}  |G_{ij}| = c_1  \hspace{2mm}, \forall k \sum_{l}  |\mathcal{F}_{kl}| = c_2 
 \end{eqnarray}
 
-The objective that we wish to minimize is defined in Eq 3. The constraint that we require the columns of G (defined by $G^{i}$ to be sparse so that our inferred $\alpha$ results in a sparse $\beta$. At this point, we explore no explicit constraints on F other than those specified above. We compute $\beta^{t+1}$ as a transformation of $\alpha^{t}$ as described in Eq 1. It is important to note that the constraints on M, are the constraints on the actuator - that is limits on forces that be applied (in this case).
+which forces the agent's prediction $(\hat{\alpha^{t+1}})$ to be close to the observed percept$({\alpha^{t+1}})$. Further, we constrain the row sums of $G$ and $\mathcal{F}$ to learn sparse $G$, $\mathcal{F}$ respectively. These matrices being sparse in turn enforces that $\beta,\hat{\alpha} $ are also sparse.
 
 \section{Discussion}
 Perceptual stabilization is a problem that many if not most animals have solved. In birds, eye movements are replaced with compensatory head movements. In this work, we wish to explore a framework that learns in sensorimotor loops. There is paucity of models that try to describe learning in these two seemingly disparate domains. 
