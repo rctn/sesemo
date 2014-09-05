@@ -14,10 +14,10 @@ Mayur Mudigonda, April 16th 2014
 
 """
 
-import matplotlib.pyplot as plt
+#import matplotlib.pyplot as plt
 import numpy as np
 from scipy.optimize import minimize
-import time
+#import time
 
 
 class SesemoAtom:
@@ -26,6 +26,8 @@ class SesemoAtom:
         
         if pathtype is None:
             self.pathtype='Default'
+        else:
+            self.pathtype=pathtype     
             
         if samples is None:
             self.samples = 10000
@@ -34,8 +36,10 @@ class SesemoAtom:
                             
         if iterations is None:
             self.learnIterations = 10
+            self.testIterations = 10
         else:
             self.learnIterations = iterations                        
+            self.testIterations = iterations
         self.FOV = 2 # defines a FOV x FOV mask as the window
         self.x,self.y = self.getData()
         self.center = np.zeros([1,2]) #defines where the center of the camer is at this point
@@ -58,8 +62,8 @@ class SesemoAtom:
         self.G = np.random.randn(np.shape(self.S)[0],np.shape(self.M)[0]) #Going between sensory and motor repr. spaces 
         self.F = np.random.randn(np.shape(self.M)[1],np.shape(self.S)[1]) #Going from Motor Space to Camera Space
         self.TimeIdx = 0
-        self.lam1 = .1
-        self.LR = .1
+        self.lam1 = .05
+        self.LR = .05
         self.TrError = np.zeros([self.learnIterations],dtype=float)
         self.TeError = np.zeros([self.learnIterations],dtype=float)
         self.DEBUG = True
@@ -67,18 +71,21 @@ class SesemoAtom:
         #ax = plt.axes(xlim=(-10,10),ylim=(-10,10))
         #self.anim, = ax.plot([],[],'g') 
             
-    def getData(self,a=10,b=5,k=5):
-        
+    def getData(self,a=15,b=5,k=5):
+        angle_range = np.linspace(-np.pi,np.pi,self.samples)        
         if self.pathtype is 'Default':
             #a = 10 #Shift in polar coordinate space
             #b = 5 # Scale in polar coordinate space
-            #k = 5 # Number of lobes you want 2 is the infinity symbol
-            angle_range = np.linspace(-np.pi,np.pi,self.samples)
+            #k = 5 # Number of lobes you want 2 is the infinity symbol            
             r = a + b*np.cos(k*angle_range)
             x = r*np.cos(angle_range)
             y = r*np.sin(angle_range)
             
-            return x,y
+        elif self.pathtype is 'Circle':
+            r = a
+            x = r*np.cos(angle_range)
+            y = r*np.sin(angle_range)
+        return x,y
     '''           
     def visualizeData(self,i):
         plt.plot(self.x[i],self.y[i],'g^')
@@ -191,6 +198,8 @@ class SesemoAtom:
         obj = obj1 + obj2        
         return obj       
 
+    ''' Try to learn S as well
+    '''
     def updateSensory(self,data):
         print('NP SHape')
         print(np.shape(self.alpha))
@@ -204,9 +213,8 @@ class SesemoAtom:
         return np.linalg.norm(update)
     
     
-    def learnmodel(self):
+    def learnmodel(self,EXPT):
         self.TimeIdx = 1
-        EXPT = 3
         for i in range(0,self.learnIterations-5):
             #Let's party!
             #PIck out Data
@@ -214,12 +222,13 @@ class SesemoAtom:
             data[0][0] = self.x[self.TimeIdx]
             data[0][1] = self.y[self.TimeIdx]
             self.data = data            
-            #Infer Beta
+            #Infer Alpha,Beta
             if EXPT is 0:
                 res = minimize(self.sparseInference, self.alpha[self.TimeIdx],method='BFGS',jac=None,tol=1e-3,options={'disp':False,'maxiter':10})
                 self.alpha[self.TimeIdx] = res.x
                 res = minimize(self.whatDoISee,self.beta[self.TimeIdx],method='BFGS',jac=None,tol=1e-3,options={'disp':False,'maxiter':10})  
                 self.beta[self.TimeIdx+1] = res.x
+            #Infer M,G,beta
             elif EXPT is 1:
                 res = minimize(self.sparseInference, self.alpha[self.TimeIdx],method='BFGS',jac=None,tol=1e-3,options={'disp':False,'maxiter':10})
                 self.alpha[self.TimeIdx] = res.x            
@@ -233,16 +242,25 @@ class SesemoAtom:
                 G = var[0:np.shape(self.G)[0]*np.shape(self.G)[1]]
                 self.G = G.reshape([np.shape(self.G)[0],np.shape(self.G)[1]])
                 M = var[np.shape(self.G)[0]*np.shape(self.G)[1]:]
-                self.M = M.reshape([np.shape(self.M)[0],np.shape(self.M)[1]])
+                M_tmp = M.reshape([np.shape(self.M)[0],np.shape(self.M)[1]])
+                M_tmp = M.reshape([np.shape(self.M)[0],np.shape(self.M)[1]])                
+                M_nrm = np.sqrt(np.sum(M_tmp**2,axis=1))
+                M_nrm = M_nrm.reshape(np.shape(M_nrm)[0],1)
+                self.M = np.divide(M_tmp,M_nrm)
                 self.beta[self.TimeIdx+1] = np.dot(self.alpha[self.TimeIdx],self.G)
+            #Infer M,beta    
             elif EXPT is 2:
                 res = minimize(self.sparseInference, self.alpha[self.TimeIdx],method='BFGS',jac=None,tol=1e-3,options={'disp':False,'maxiter':10})
                 self.alpha[self.TimeIdx] = res.x
                 M = self.M.flatten()
                 print('Solving for M')
                 res = minimize(self.whatDoISee3,M,method='BFGS',jac=None,tol=1e-3,options={'disp':True,'maxiter':10})            
-                self.M = res.x.reshape([np.shape(self.M)[0],np.shape(self.M)[1]])
+                M_tmp = res.x.reshape([np.shape(self.M)[0],np.shape(self.M)[1]])                     
+                M_nrm = np.sqrt(np.sum(M_tmp**2,axis=1))
+                M_nrm = M_nrm.reshape(np.shape(M_nrm)[0],1)
+                self.M = np.divide(M_tmp,M_nrm)
                 self.beta[self.TimeIdx+1] = np.dot(self.alpha[self.TimeIdx],self.G)
+            #Infer alpha,S,M,G,beta    
             elif EXPT is 3:
                 print('Solving for M,S')
                 #update S
@@ -268,7 +286,10 @@ class SesemoAtom:
                 G = var[0:np.shape(self.G)[0]*np.shape(self.G)[1]]
                 self.G = G.reshape([np.shape(self.G)[0],np.shape(self.G)[1]])
                 M = var[np.shape(self.G)[0]*np.shape(self.G)[1]:]
-                self.M = M.reshape([np.shape(self.M)[0],np.shape(self.M)[1]])
+                M_tmp = M.reshape([np.shape(self.M)[0],np.shape(self.M)[1]])                
+                M_nrm = np.sqrt(np.sum(M_tmp**2,axis=1))
+                M_nrm = M_nrm.reshape(np.shape(M_nrm)[0],1)
+                self.M = np.divide(M_tmp,M_nrm)
                 self.beta[self.TimeIdx+1] = np.dot(self.alpha[self.TimeIdx],self.G)
                 
             '''            
@@ -286,27 +307,39 @@ class SesemoAtom:
                 #Let's calculateho far we are from center to Point
                 print '*******Error******'
                 print(error)
+                print 'Alpha Value During Train'
+                print(self.alpha[self.TimeIdx])
+                print 'Beta value during train'
+                print(self.beta[self.TimeIdx])
+
             self.TrError[self.TimeIdx] = error
             self.TimeIdx = self.TimeIdx + 1
         return 1
-        
+       
+    ''' All tests only work with inferring alpha and beta
+    That is no learning will happen
+    '''
+    
     def testmodel(self):
         print('***********starting Test!!!*******************')
         self.TimeIdx = 0
         #Get new data
-        self.getData(k=7)
-        for i in range(0,self.learnIterations-2):
+        self.getData()
+        self.center[0][0] = self.x[0]
+        self.center[0][1] = self.y[0]
+        for ii in range(0,self.testIterations-2):
             #Let's party!
             #PIck out Data
             data = np.zeros([1,2])
-            data[0][0] = self.x[self.TimeIdx]
-            data[0][1] = self.y[self.TimeIdx]
+            data[0][0] = self.x[ii]
+            data[0][1] = self.y[ii]
             self.data = data        
             '''
             self.center = np.zeros([1,2]) #defines where the center of the camer is at this point
             self.center[0][0] = self.x[0]
             self.center[0][1] = self.y[0]
             '''
+            #Compute Alpha
             res = minimize(self.sparseInference, self.alpha[self.TimeIdx],method='BFGS',jac=None,tol=1e-3,options={'disp':False,'maxiter':10})
             self.alpha[self.TimeIdx] = res.x
             error = np.linalg.norm(data-self.center)
@@ -321,6 +354,8 @@ class SesemoAtom:
                 #Let's calculateho far we are from center to Point
                 print '*******Error******'
                 print(error)
+                print 'Alpha Value During Test'
+                print(self.alpha[self.TimeIdx])
             self.TeError[self.TimeIdx] = error
             self.TimeIdx = self.TimeIdx + 1
         return 1
