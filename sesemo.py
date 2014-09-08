@@ -70,27 +70,22 @@ class SesemoAtom:
         #self.fig = plt.figure()
         #ax = plt.axes(xlim=(-10,10),ylim=(-10,10))
         #self.anim, = ax.plot([],[],'g') 
+
+    '''This actually generates data for the spheres
+    '''
             
     def getData(self,a=15,b=5,k=5):
-        angle_range = np.linspace(-np.pi,np.pi,self.samples)        
-        if self.pathtype is 'Default':
-            #a = 10 #Shift in polar coordinate space
-            #b = 5 # Scale in polar coordinate space
-            #k = 5 # Number of lobes you want 2 is the infinity symbol            
-            r = a + b*np.cos(k*angle_range)
-            x = r*np.cos(angle_range)
-            y = r*np.sin(angle_range)
-            
-        elif self.pathtype is 'Circle':
-            r = a
-            x = r*np.cos(angle_range)
-            y = r*np.sin(angle_range)
+       
         return x,y
     '''           
-    def visualizeData(self,i):
-        plt.plot(self.x[i],self.y[i],'g^')
-        return fig
-    '''    
+    This is where I see the bokeh animation go. This is the world view!
+    '''
+    def visualizeData(self):
+       
+        return 1
+
+    '''This initializes the motor basis to be somethign
+    '''        
     def motorBasis(self,numofbasis=None):
         #I will setup a hand-coded basis that is left power, right power, time
         if numofbasis is None:
@@ -119,7 +114,10 @@ class SesemoAtom:
             M[8] = [0,0.25]
             M[9] = [0.25,0] 
             return M
-            
+      
+    ''' This initializes sensory basis which needs to be more reasonable now!
+    '''
+      
     def sensoryBasis(self,numofbasis=None): #Make sure they are ndarrays and not lists
         if numofbasis is None:
             self.numofbasis_S='Default'
@@ -133,22 +131,22 @@ class SesemoAtom:
             S[6]= [np.cos(1.25*np.pi),np.sin(1.25*np.pi)]
             S[7]= [np.cos(1.75*np.pi),np.sin(1.75*np.pi)]             
         return S
-            
-    """ Field of View 
-   Compute error to infer beta
-    """
-
+   
+   
+    '''
+     Global reward function. In this case total number of pixels but in future we
+     can compute other things like spatio-temporal statistics 
+    '''
     def whatDoISee(self,beta):
-        #Take FOV and actual x,y data and compute Euclidean distance
-        dist_from_self = np.linalg.norm(self.data -(self.center+np.dot(beta,self.M)))
-        
-        return dist_from_self
+  
+           #pixels. count them.   
+        return 1
             
 
     '''
     Objective that estimate both of G,M
     '''
-    def whatDoISee2(self,var):
+    def learn_M_G(self,var):
         #Extract variables        
         G = var[0:np.shape(self.G)[0]*np.shape(self.G)[1]]
         G = G.reshape([np.shape(self.G)[0],np.shape(self.G)[1]])
@@ -164,7 +162,7 @@ class SesemoAtom:
     '''
     Objective that estimate only M
     '''
-    def whatDoISee3(self,var):
+    def learn_M(self,var):
         M = var
         M = M.reshape([np.shape(self.M)[0],np.shape(self.M)[1]])
         beta = np.dot(self.alpha[self.TimeIdx],self.G)
@@ -172,7 +170,7 @@ class SesemoAtom:
         dist_from_self = np.linalg.norm(self.data -(self.center+np.dot(beta,M)))        
         return dist_from_self
 
-    def sparseInference(self,alpha):
+    def sparseSensoryInference(self,alpha):
         data = np.zeros([1,2])
         data[0][0] = self.x[self.TimeIdx]
         data[0][1] = self.y[self.TimeIdx]
@@ -184,7 +182,7 @@ class SesemoAtom:
         obj = obj1 + obj2        
         return obj
  
-    def sparseInference2(self,alpha):
+    def sparseSensoryInference2(self,alpha):
         data = np.zeros([1,4])
         data[0][0] = self.x[self.TimeIdx-1]
         data[0][1] = self.y[self.TimeIdx-1]
@@ -218,103 +216,18 @@ class SesemoAtom:
         for i in range(0,self.learnIterations-5):
             #Let's party!
             #PIck out Data
-            data = np.zeros([1,2])
-            data[0][0] = self.x[self.TimeIdx]
-            data[0][1] = self.y[self.TimeIdx]
-            self.data = data            
-            #Infer Alpha,Beta
-            if EXPT is 0:
-                res = minimize(self.sparseInference, self.alpha[self.TimeIdx],method='BFGS',jac=None,tol=1e-3,options={'disp':False,'maxiter':10})
-                self.alpha[self.TimeIdx] = res.x
-                res = minimize(self.whatDoISee,self.beta[self.TimeIdx],method='BFGS',jac=None,tol=1e-3,options={'disp':False,'maxiter':10})  
-                self.beta[self.TimeIdx+1] = res.x
-            #Infer M,G,beta
-            elif EXPT is 1:
-                res = minimize(self.sparseInference, self.alpha[self.TimeIdx],method='BFGS',jac=None,tol=1e-3,options={'disp':False,'maxiter':10})
-                self.alpha[self.TimeIdx] = res.x            
-                G = self.G.flatten()
-                M = self.M.flatten()
-                var = np.concatenate((G,M))
-                print('Solving for M,G')
-                res = minimize(self.whatDoISee2,var,method='BFGS',jac=None,tol=1e-3,options={'disp':True,'maxiter':10})            
-                #print(res.x)
-                var = res.x
-                G = var[0:np.shape(self.G)[0]*np.shape(self.G)[1]]
-                self.G = G.reshape([np.shape(self.G)[0],np.shape(self.G)[1]])
-                M = var[np.shape(self.G)[0]*np.shape(self.G)[1]:]
-                M_tmp = M.reshape([np.shape(self.M)[0],np.shape(self.M)[1]])
-                M_tmp = M.reshape([np.shape(self.M)[0],np.shape(self.M)[1]])                
-                M_nrm = np.sqrt(np.sum(M_tmp**2,axis=1))
-                M_nrm = M_nrm.reshape(np.shape(M_nrm)[0],1)
-                self.M = np.divide(M_tmp,M_nrm)
-                self.beta[self.TimeIdx+1] = np.dot(self.alpha[self.TimeIdx],self.G)
-            #Infer M,beta    
-            elif EXPT is 2:
-                res = minimize(self.sparseInference, self.alpha[self.TimeIdx],method='BFGS',jac=None,tol=1e-3,options={'disp':False,'maxiter':10})
-                self.alpha[self.TimeIdx] = res.x
-                M = self.M.flatten()
-                print('Solving for M')
-                res = minimize(self.whatDoISee3,M,method='BFGS',jac=None,tol=1e-3,options={'disp':True,'maxiter':10})            
-                M_tmp = res.x.reshape([np.shape(self.M)[0],np.shape(self.M)[1]])                     
-                M_nrm = np.sqrt(np.sum(M_tmp**2,axis=1))
-                M_nrm = M_nrm.reshape(np.shape(M_nrm)[0],1)
-                self.M = np.divide(M_tmp,M_nrm)
-                self.beta[self.TimeIdx+1] = np.dot(self.alpha[self.TimeIdx],self.G)
-            #Infer alpha,S,M,G,beta    
-            elif EXPT is 3:
-                print('Solving for M,S')
-                #update S
-                #Make Data a few time frames long
-                data = np.zeros([1,np.shape(self.S)[1]])
-                data[0][0] = self.x[self.TimeIdx-1]
-                data[0][1] = self.y[self.TimeIdx-1] 
-                data[0][2] = self.x[self.TimeIdx]
-                data[0][3] = self.y[self.TimeIdx]
-                #Infer coefficients for time frame
-                res = minimize(self.sparseInference2, self.alpha[self.TimeIdx],method='BFGS',jac=None,tol=1e-3,options={'disp':False,'maxiter':10})
-                self.alpha[self.TimeIdx] = res.x                
-                #Update Sensory representation
-                self.updateSensory(data)                
-                #Solve for M & G
-                G = self.G.flatten()
-                M = self.M.flatten()
-                var = np.concatenate((G,M))
-                print('Solving for M,G')
-                res = minimize(self.whatDoISee2,var,method='BFGS',jac=None,tol=1e-3,options={'disp':True,'maxiter':10})            
-                #print(res.x)
-                var = res.x
-                G = var[0:np.shape(self.G)[0]*np.shape(self.G)[1]]
-                self.G = G.reshape([np.shape(self.G)[0],np.shape(self.G)[1]])
-                M = var[np.shape(self.G)[0]*np.shape(self.G)[1]:]
-                M_tmp = M.reshape([np.shape(self.M)[0],np.shape(self.M)[1]])                
-                M_nrm = np.sqrt(np.sum(M_tmp**2,axis=1))
-                M_nrm = M_nrm.reshape(np.shape(M_nrm)[0],1)
-                self.M = np.divide(M_tmp,M_nrm)
-                self.beta[self.TimeIdx+1] = np.dot(self.alpha[self.TimeIdx],self.G)
+           
                 
-            '''            
-            if self.DEBUG is True:
-                print('value of beta is %f')
-                print(res.x)
-            '''
-            error = np.linalg.norm(data-self.center)
-            self.center = self.center + np.dot(self.beta[self.TimeIdx+1],self.M)
+            
+            
+            
             if self.DEBUG is True:        
-                print 'Value of data'
-                print data
-                print 'value of center is'
-                print self.center
-                #Let's calculateho far we are from center to Point
-                print '*******Error******'
-                print(error)
-                print 'Alpha Value During Train'
-                print(self.alpha[self.TimeIdx])
-                print 'Beta value during train'
-                print(self.beta[self.TimeIdx])
+               #DEBUG STATEMENTS GO HERE!
 
             self.TrError[self.TimeIdx] = error
             self.TimeIdx = self.TimeIdx + 1
         return 1
+
        
     ''' All tests only work with inferring alpha and beta
     That is no learning will happen
@@ -325,38 +238,6 @@ class SesemoAtom:
         self.TimeIdx = 0
         #Get new data
         self.getData()
-        self.center[0][0] = self.x[0]
-        self.center[0][1] = self.y[0]
-        for ii in range(0,self.testIterations-2):
-            #Let's party!
-            #PIck out Data
-            data = np.zeros([1,2])
-            data[0][0] = self.x[ii]
-            data[0][1] = self.y[ii]
-            self.data = data        
-            '''
-            self.center = np.zeros([1,2]) #defines where the center of the camer is at this point
-            self.center[0][0] = self.x[0]
-            self.center[0][1] = self.y[0]
-            '''
-            #Compute Alpha
-            res = minimize(self.sparseInference, self.alpha[self.TimeIdx],method='BFGS',jac=None,tol=1e-3,options={'disp':False,'maxiter':10})
-            self.alpha[self.TimeIdx] = res.x
-            error = np.linalg.norm(data-self.center)
-            #Compute Beta
-            self.beta[self.TimeIdx+1] = np.dot(self.alpha[self.TimeIdx],self.G)
-            self.center = self.center + np.dot(self.beta[self.TimeIdx+1],self.M)
-            if self.DEBUG is True:        
-                print 'Value of data'
-                print data
-                print 'value of center is'
-                print self.center
-                #Let's calculateho far we are from center to Point
-                print '*******Error******'
-                print(error)
-                print 'Alpha Value During Test'
-                print(self.alpha[self.TimeIdx])
-            self.TeError[self.TimeIdx] = error
-            self.TimeIdx = self.TimeIdx + 1
+        
         return 1
                     
