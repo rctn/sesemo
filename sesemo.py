@@ -71,19 +71,7 @@ class SesemoAtom:
         #ax = plt.axes(xlim=(-10,10),ylim=(-10,10))
         #self.anim, = ax.plot([],[],'g') 
 
-    '''This actually generates data for the spheres
-    '''
-            
-    def getData(self,a=15,b=5,k=5):
-       
-        return x,y
-    '''           
-    This is where I see the bokeh animation go. This is the world view!
-    '''
-    def visualizeData(self):
-       
-        return 1
-
+   
     '''This initializes the motor basis to be somethign
     '''        
     def motorBasis(self,numofbasis=None):
@@ -137,7 +125,7 @@ class SesemoAtom:
      Global reward function. In this case total number of pixels but in future we
      can compute other things like spatio-temporal statistics 
     '''
-    def whatDoISee(self,beta):
+    def minPixels(self,beta):
   
            #pixels. count them.   
         return 1
