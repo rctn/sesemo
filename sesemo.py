@@ -40,11 +40,8 @@ class SesemoAtom:
         else:
             self.learnIterations = iterations                        
             self.testIterations = iterations
-        self.FOV = 2 # defines a FOV x FOV mask as the window
-        self.x,self.y = self.getData()
-        self.center = np.zeros([1,2]) #defines where the center of the camer is at this point
-        self.center[0][0] = self.x[0]
-        self.center[0][1] = self.y[0]
+        self.FOV = 32 # defines a FOV x FOV as the size of the world
+        
         if learnMotor is None:
             self.M = self.motorBasis()
         else:
@@ -54,22 +51,27 @@ class SesemoAtom:
         else:
             #The case where you can look at temporal dependency
             self.S = np.random.randn(learnSensory[0],learnSensory[1])
-                
+
+        #One variable to tell us what we are actually seeing
+        self.Image = np.zeros([self.FOV,self.FOV],dtype=float)
+        #This is the location of the center of the sphere we control
+        self.center = np.zeros([0,0],dtype=float) 
+        #This is the radius of the sphere
+        self.sphereSize = 3
         #Inferred coffecients for Sensory percept
         self.alpha = np.zeros([self.samples,np.shape(self.S)[0]],dtype=float) 
         #Inferred cofficents for Motor representations
         self.beta = np.zeros([self.samples+1,np.shape(self.M)[0]],dtype=float)
         self.G = np.random.randn(np.shape(self.S)[0],np.shape(self.M)[0]) #Going between sensory and motor repr. spaces 
-        self.F = np.random.randn(np.shape(self.M)[1],np.shape(self.S)[1]) #Going from Motor Space to Camera Space
+
+        
         self.TimeIdx = 0
         self.lam1 = .05
         self.LR = .05
         self.TrError = np.zeros([self.learnIterations],dtype=float)
         self.TeError = np.zeros([self.learnIterations],dtype=float)
         self.DEBUG = True
-        #self.fig = plt.figure()
-        #ax = plt.axes(xlim=(-10,10),ylim=(-10,10))
-        #self.anim, = ax.plot([],[],'g') 
+        
 
    
     '''This initializes the motor basis to be somethign
@@ -79,18 +81,6 @@ class SesemoAtom:
         if numofbasis is None:
             self.numofbasis_M='Default'
             M = np.zeros([10,2],dtype=float) # 10 basis elements with 3 parameters each
-            '''            
-            M[0] = [1,1,.1]
-            M[1] = [-1,-1,.1]
-            M[2] = [1,0.5,.1] 
-            M[3] = [0.5,1,.1] 
-            M[4] = [1,-0.5,.1]
-            M[5] = [-0.5,1,.1] 
-            M[6] = [1,0.25,0.1]
-            M[7] = [0.25,1,0.1]
-            M[8] = [0,0.25,.1]
-            M[9] = [0.25,0,.1] 
-            '''
             M[0] = [1,1]
             M[1] = [-1,-1]
             M[2] = [1,0.5] 
@@ -107,17 +97,10 @@ class SesemoAtom:
     '''
       
     def sensoryBasis(self,numofbasis=None): #Make sure they are ndarrays and not lists
-        if numofbasis is None:
-            self.numofbasis_S='Default'
-            S = np.zeros([8,2],dtype=float)
-            S[0]= [0,1]
-            S[1]= [0,-1]
-            S[2]= [1,0]
-            S[3]= [-1,0]
-            S[4]= [np.cos(np.pi/4),np.sin(np.pi/4)]
-            S[5]= [np.cos(0.75*np.pi),np.sin(0.75*np.pi)]
-            S[6]= [np.cos(1.25*np.pi),np.sin(1.25*np.pi)]
-            S[7]= [np.cos(1.75*np.pi),np.sin(1.75*np.pi)]             
+        if numofbasis is None:            
+            #FOV*FOV is dimensionality of basis
+            #FOV*4 is overcompleteness
+            S = np.random.randn([self.FOV*self.FOV,self.FOV*4],dtype=float)                   
         return S
    
    
@@ -125,9 +108,11 @@ class SesemoAtom:
      Global reward function. In this case total number of pixels but in future we
      can compute other things like spatio-temporal statistics 
     '''
-    def minPixels(self,beta):
+    def minPixels(self):
   
            #pixels. count them.   
+        #update self  
+        total_active = np.sum(np.sum(self.Image))
         return 1
             
 
@@ -143,8 +128,13 @@ class SesemoAtom:
         #compute beta
         beta = np.dot(self.alpha[self.TimeIdx],G)
         
-        #Calculate error
-        dist_from_self = np.linalg.norm(self.data -(self.center+np.dot(beta,M))) + np.linalg.norm(G)
+        ##Calculate error
+        #dist_from_self = np.linalg.norm(self.data -(self.center+np.dot(beta,M))) + np.linalg.norm(G)
+        #now our new error will be total active pixels which is affected by
+        #our current choice of M,beta as well
+        new_Self = np.dot(beta,M)
+        self.center = self.center + new_Self
+        total_active = minPixels(new_Self)
         return dist_from_self
         
     '''
@@ -184,19 +174,13 @@ class SesemoAtom:
         obj = obj1 + obj2        
         return obj       
 
-    ''' Try to learn S as well
+    ''' 
+    Returns updated value of Image (sensory state). Accepts inputs in the form 
+    of either self changes or world changes
     '''
-    def updateSensory(self,data):
-        print('NP SHape')
-        print(np.shape(self.alpha))
-        print(np.shape(self.S))
-        print(np.shape(data))
-        estim = (data-np.dot(self.alpha[self.TimeIdx],self.S))
-        print(np.shape(estim))
-        grad = -2*np.dot(self.alpha[self.TimeIdx].T, estim)
-        update = self.LR*grad
-        self.S = self.S + update
-        return np.linalg.norm(update)
+    def updateSensory(self,self_center,world_center):
+       
+        return 1
     
     
     def learnmodel(self,EXPT):
