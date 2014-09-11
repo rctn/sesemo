@@ -8,14 +8,14 @@ import numpy as np
 _methods = ['acceln']
 _default_method = 'acceln'
 class Trajectory():
-    def __init__(self, N, batch_size, dim, space_size, object_rad, valid=True, 
+    def __init__(self, nIter, batch_size, dim, space_size, object_rad, valid=True, 
                  method=None, rng=None, dt = .5):
         """ Create trajectory of points in space iterator.
 
         Parameters
         ----------
-        N : int
-            Number of iteratoins to return.
+        nIter : int
+            Number of iterations to return.
         batch_size : int
             Number of trajectories to return at once.
         dim : int
@@ -31,7 +31,7 @@ class Trajectory():
         rng : RandomState
             Randon generator for trajectories.
         """
-        self.N = N
+        self.nIter = nIter
         self.batch_size = batch_size
         self.dim = dim
         self.space_size = space_size
@@ -60,7 +60,7 @@ class Trajectory():
         return self
 
     def next(self):
-        if self.current > self.N:
+        if self.current > self.nIter:
             raise StopIteration
         else:
             self.current += 1
@@ -86,5 +86,5 @@ class Trajectory():
         else:
             raise NotImplementedError(str(self.method)+' is not implemented '
                                       +'for generating trajectories')
-        return self.state()
+        return self.state
 
