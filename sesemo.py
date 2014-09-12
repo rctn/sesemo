@@ -58,6 +58,9 @@ class SesemoAtom:
         self.center = np.zeros([0,0],dtype=float) 
         #This is the radius of the sphere
         self.sphereSize = 3
+        #MAke themask
+        self.MASK = self.makeMask(self.sphereSize)        
+        
         #Inferred coffecients for Sensory percept
         self.alpha = np.zeros([self.samples,np.shape(self.S)[0]],dtype=float) 
         #Inferred cofficents for Motor representations
@@ -73,6 +76,21 @@ class SesemoAtom:
         self.DEBUG = True
         
 
+    def makeBasis(self,radius):
+        radius=4
+        CENTER = np.zeros(shape=(1,2))
+        CENTER[0][0] = radius
+        CENTER[0][1] = radius
+        MASK=np.zeros(shape=(radius*2 -1,radius*2 -1))
+        for ii in xrange(0,radius*2-1):
+            for jj in xrange(0,radius*2-1):
+#            var1 = ((ii+1)-CENTER[0][0])**2
+#            var2 = ((jj+1)-CENTER[0][1])**2
+#            print ii,jj, (np.sqrt(var1+var2)), radius 
+            #The 0.5 is to help break up the pixel to give a nicer shape
+                if (np.sqrt(var1 + var2)) <= (radius-0.5):
+                    MASK[ii][jj]=1
+        return MASK
    
     '''This initializes the motor basis to be somethign
     '''        
@@ -110,8 +128,9 @@ class SesemoAtom:
     '''
     def minPixels(self):
   
-           #pixels. count them.   
+        #pixels. count them.   
         #update self  
+        self.UpdateSensory()
         total_active = np.sum(np.sum(self.Image))
         return 1
             
@@ -179,7 +198,12 @@ class SesemoAtom:
     of either self changes or world changes
     '''
     def updateSensory(self,self_center,world_center):
-       
+        self.Image[self_center[0][0]-self.sphereSize:self_center[0][0]+ \
+        self.sphereSize-1,self_center[0][1]-self.sphereSize:self_center[0][1]+self.sphereSize-1] = MASK
+        
+        self.Image[world_center[0][0]-self.sphereSize:world_center[0][0]+ \
+        self.sphereSize-1,world_center[0][1]-self.sphereSize:world_center[0][1]+self.sphereSize-1] = MASK
+        
         return 1
     
     
