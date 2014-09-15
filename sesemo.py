@@ -84,8 +84,8 @@ class SesemoAtom:
         MASK=np.zeros(shape=(radius*2 -1,radius*2 -1))
         for ii in xrange(0,radius*2-1):
             for jj in xrange(0,radius*2-1):
-#            var1 = ((ii+1)-CENTER[0][0])**2
-#            var2 = ((jj+1)-CENTER[0][1])**2
+                var1 = ((ii+1)-CENTER[0][0])**2
+                var2 = ((jj+1)-CENTER[0][1])**2
 #            print ii,jj, (np.sqrt(var1+var2)), radius 
             #The 0.5 is to help break up the pixel to give a nicer shape
                 if (np.sqrt(var1 + var2)) <= (radius-0.5):
@@ -198,13 +198,37 @@ class SesemoAtom:
     of either self changes or world changes
     '''
     def updateSensory(self,self_center,world_center):
-        self.Image[self_center[0][0]-self.sphereSize:self_center[0][0]+ \
-        self.sphereSize-1,self_center[0][1]-self.sphereSize:self_center[0][1]+self.sphereSize-1] = MASK
+        #Self Update Indices        
+        self_row = np.arange(self_center[0][0]-self.sphereSize,self_center[0][0] + self.sphereSize-1)
+        self_col = np.arange(self_center[0][1]-self.sphereSize,self_center[0][1] + self.sphereSize-1)
+        #check if lower than lower bounds for row/col for IMAGE
+        self_row = self_row[(self_row>=0)&(self_row<=self.FOV)]
+        self_col = self_col[(self_col>=0)&(self_col<=self.FOV)]
+        #We will just count the number of rows and columns 
+        mask_row = np.arange(0,self_row.size)
+        mask_col = np.arange(0,self_col.size)
+        #Copy Self sphere
+        self.Image[self_row,self_col] = MASK[mask_row,mask_col]
+        #How many pixels off screen??
+        PixelsOffScreen = np.abs(mask_row.size*mask_col.size -MASK.size) 
+
+        #check if lower than lower bounds for row/col
+        #check if greater than upper bounds for row/col
+        #reduce the size of the MASK to match
+        world_row = np.arange(world_center[0][0]-self.sphereSize,world_center[0][0] + self.sphereSize-1)
+        world_col = np.arange(world_center[0][1]-self.sphereSize,world_center[0][1] + self.sphereSize-1)
         
-        self.Image[world_center[0][0]-self.sphereSize:world_center[0][0]+ \
-        self.sphereSize-1,world_center[0][1]-self.sphereSize:world_center[0][1]+self.sphereSize-1] = MASK
+        #discarding invalid indices
+        world_row = world_row[(world_row>=0)&(world_row<=self.FOV)]
+        world_col = world_col[(world_col>=0)&(world_col<=self.FOV)]
         
-        return 1
+        #update MASK indices
+        mask_row = np.arange(0,world_row.size)
+        mask_col = np.arange(0,world_col.size)        
+        #Copy world sphere
+        self.Image[world_row,world_col] = MASK[mask_row,mask_col]
+        
+        return PixelsOffScreen
     
     
     def learnmodel(self,EXPT):
