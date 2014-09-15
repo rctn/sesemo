@@ -130,8 +130,8 @@ class SesemoAtom:
   
         #pixels. count them.   
         #update self  
-        self.UpdateSensory()
-        total_active = np.sum(np.sum(self.Image))
+        penalty = self.UpdateSensory()
+        total_active = np.sum(np.sum(self.Image)) + penalty
         return 1
             
 
@@ -179,19 +179,11 @@ class SesemoAtom:
         obj = obj1 + obj2        
         return obj
  
-    def sparseSensoryInference2(self,alpha):
-        data = np.zeros([1,4])
-        data[0][0] = self.x[self.TimeIdx-1]
-        data[0][1] = self.y[self.TimeIdx-1]
-        data[0][2] = self.x[self.TimeIdx]
-        data[0][3] = self.y[self.TimeIdx]
-        #print(np.shape(alpha))
-        #print(np.shape(self.S))
-        present_recon = np.dot(alpha,self.S)
-        obj1 = np.linalg.norm(data - present_recon)
-        obj2 = self.lam1*np.sum(np.absolute(alpha))                
-        obj = obj1 + obj2        
-        return obj       
+    def sensoryLearning(self,data1,data2):
+        #Compute Gradient
+        grad = -2*self.alpha
+        #Update S
+        return 1
 
     ''' 
     Returns updated value of Image (sensory state). Accepts inputs in the form 
