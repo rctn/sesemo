@@ -37,7 +37,8 @@ class Trajectory():
         self.space_size = space_size
         self.dt = dt
 
-        assert object_rad < space_size
+        assert len(object_rad) == len(space_size)
+        assert all([o < r for o,r in zip(object_rad, space_size)])
         self.object_rad = object_rad
 
         self.valid = valid
@@ -47,36 +48,37 @@ class Trajectory():
         assert method in _methods
         self.method = method
 
-        if rng = None:
-            self.rng = np.random.RandomState(08092014)
+        if rng == None:
+            self.rng = np.random.RandomState(8092014)
         else:
             assert isinstance(rng, np.random.mtrand.RandomState)
             self.rng = rng
         
         self.current = 0
-        self.state = np.zeros(batch_size, dim)
+        self.state = np.zeros((batch_size, dim))
 
     def __iter__(self):
         return self
 
     def next(self):
-        if self.current > self.nIter:
+        if self.current >= self.nIter:
             raise StopIteration
         else:
+            rval = self.update()
             self.current += 1
-            return self.update()
+            return rval
     
-    def update():
+    def update(self):
         if self.method == 'acceln':
-            if current == 0:
+            if self.current == 0:
                 self.vel = np.zeros_like(self.state)
-                    for d, s, r in zip(xrange(self.dim), self.space_size, self.object_rad):
-                        if self.valid:
-                            self.state[...,d] = self.rng.uniform(low=r, high=s-r, size=self.batch_size)
-                        else:
-                            self.state[...,d] = self.rng.uniform(low=0., high=s, size=self.batch_size)
+                for d, s, r in zip(xrange(self.dim), self.space_size, self.object_rad):
+                    if self.valid:
+                        self.state[...,d] = self.rng.uniform(low=r, high=s-r, size=self.batch_size)
+                    else:
+                        self.state[...,d] = self.rng.uniform(low=0., high=s, size=self.batch_size)
             else:
-                self.vel += rng.normal(size=self.vel.shape)
+                self.vel += self.rng.normal(size=self.vel.shape)-.9*self.vel
                 self.state += self.dt*self.vel
                 for d, s, r in zip(xrange(self.dim), self.space_size, self.object_rad):
                     if self.valid:

@@ -234,6 +234,7 @@ class SesemoAtom:
             
             
             if self.DEBUG is True:        
+                pass
                #DEBUG STATEMENTS GO HERE!
 
             self.TrError[self.TimeIdx] = error
