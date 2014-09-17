@@ -62,10 +62,10 @@ class SesemoAtom:
         self.MASK = self.makeMask(self.sphereSize)        
         
         #Inferred coffecients for Sensory percept
-        self.alpha = np.zeros([self.samples,np.shape(self.S)[0]],dtype=float) 
+        self.alpha = np.zeros([np.shape(self.S)[1],self.samples],dtype=float) 
         #Inferred cofficents for Motor representations
-        self.beta = np.zeros([self.samples+1,np.shape(self.M)[0]],dtype=float)
-        self.G = np.random.randn(np.shape(self.S)[0],np.shape(self.M)[0]) #Going between sensory and motor repr. spaces 
+        self.beta = np.zeros([np.shape(self.M)[1],self.samples],dtype=float)
+        self.G = np.random.randn(np.shape(self.S)[1],np.shape(self.M)[1]) #Going between sensory and motor repr. spaces 
 
         
         self.TimeIdx = 0
@@ -129,10 +129,10 @@ class SesemoAtom:
     def minPixels(self):
   
         #pixels. count them.   
-        #update self  
-        penalty = self.UpdateSensory()
+        #What are the variables - M,G
+        penalty = self.UpdateWorld(self.center,self.world_center)
         total_active = np.sum(np.sum(self.Image)) + penalty
-        return 1
+        return total_active
             
 
     '''
@@ -167,29 +167,36 @@ class SesemoAtom:
         dist_from_self = np.linalg.norm(self.data -(self.center+np.dot(beta,M)))        
         return dist_from_self
 
-    def sparseSensoryInference(self,alpha):
-        data = np.zeros([1,2])
-        data[0][0] = self.x[self.TimeIdx]
-        data[0][1] = self.y[self.TimeIdx]
-        #print(np.shape(alpha))
-        #print(np.shape(self.S))
+    def sparseSensoryInference(self,alpha,data):
+        
         present_recon = np.dot(alpha,self.S)
         obj1 = np.linalg.norm(data - present_recon)
         obj2 = self.lam1*np.sum(np.absolute(alpha))                
         obj = obj1 + obj2        
         return obj
  
-    def sensoryLearning(self,data1,data2):
+    def sensoryLearning(self,data):
         #Compute Gradient
-        grad = -2*self.alpha
-        #Update S
+        grad = -2*self.alpha*(data -np.dot(self.alpha.T,self.S))
+        #check that there's no NANs
+        if np.isnan(grad):
+            print "gradient has NaNs and not the kind you can eat with curry!"
+            return -1
+            
+        #Check that there's no Inf
+        if np.isinf(grad):
+            print "gradient has Inf and not the kind you can draw on paper"
+            return -2
+        #Update S        
+        self.S = self.S + self.LR*grad        
+
         return 1
 
     ''' 
     Returns updated value of Image (sensory state). Accepts inputs in the form 
     of either self changes or world changes
     '''
-    def updateSensory(self,self_center,world_center):
+    def updateWorld(self,self_center,world_center):
         #Self Update Indices        
         self_row = np.arange(self_center[0][0]-self.sphereSize,self_center[0][0] + self.sphereSize-1)
         self_col = np.arange(self_center[0][1]-self.sphereSize,self_center[0][1] + self.sphereSize-1)
@@ -225,13 +232,31 @@ class SesemoAtom:
     
     def learnmodel(self,EXPT):
         self.TimeIdx = 1
-        for i in range(0,self.learnIterations-5):
+        #Increments of 5 and stop before the last 5
+        for ii in range(0,self.learnIterations,5):
             #Let's party!
             #PIck out Data
+           curr = self.data[ii][:]
+           next_sample = self.data[ii+5][:]
+           diff_sample = next_sample-curr
            
-                
-            
-            
+           #Update World Center
+           self.world_center = next_sample           
+           #Update Sensory Basis
+           self.sensoryLearning(diff_sample)
+           #Infer Coefficients on S
+           alpha_guess=np.zeros(self.alpha.size)
+           self.alpha[TimeIdx]=minimize(sparseSensoryInference,alpha_guess,\
+           [],method='BFGS')
+           #Beta = Alpha*G
+           self.beta[TimeIdx]= np.dot(self.alpha,self.G)
+           #Solve MinPixels to pick best set of M,G
+           #Init Variables
+           var= np.concatenate(self.G.flatten()[:],self.M.flatten()[:]),axis=0)
+           var = minimize(minPixels,var,[],method='BFGS')
+           #break it down
+           #self.G = 
+           #self.M =
             
             if self.DEBUG is True:        
                 pass
