@@ -17,7 +17,7 @@ Mayur Mudigonda, April 16th 2014
 #import matplotlib.pyplot as plt
 import numpy as np
 from scipy.optimize import minimize
-#import time
+import trajectory
 
 
 class SesemoAtom:
@@ -44,13 +44,8 @@ class SesemoAtom:
         
         if learnMotor is None:
             self.M = self.motorBasis()
-        else:
-            self.M = np.random.randn(learnMotor,2)
         if learnSensory is None:
             self.S = self.sensoryBasis()
-        else:
-            #The case where you can look at temporal dependency
-            self.S = np.random.randn(learnSensory[0],learnSensory[1])
 
         #One variable to tell us what we are actually seeing
         self.Image = np.zeros([self.FOV,self.FOV],dtype=float)
@@ -62,9 +57,9 @@ class SesemoAtom:
         self.MASK = self.makeMask(self.sphereSize)        
         
         #Inferred coffecients for Sensory percept
-        self.alpha = np.zeros([np.shape(self.S)[1],self.samples],dtype=float) 
+        self.alpha = np.zeros([np.shape(self.S)[1],self.learnIterations],dtype=float) 
         #Inferred cofficents for Motor representations
-        self.beta = np.zeros([np.shape(self.M)[1],self.samples],dtype=float)
+        self.beta = np.zeros([np.shape(self.M)[1],self.learnIterations],dtype=float)
         self.G = np.random.randn(np.shape(self.S)[1],np.shape(self.M)[1]) #Going between sensory and motor repr. spaces 
 
         
@@ -76,7 +71,7 @@ class SesemoAtom:
         self.DEBUG = True
         
 
-    def makeBasis(self,radius):
+    def makeMask(self,radius):
         radius=4
         CENTER = np.zeros(shape=(1,2))
         CENTER[0][0] = radius
@@ -96,7 +91,8 @@ class SesemoAtom:
     '''        
     def motorBasis(self,numofbasis=None):
         #I will setup a hand-coded basis that is left power, right power, time
-        if numofbasis is None:
+
+            '''
             self.numofbasis_M='Default'
             M = np.zeros([10,2],dtype=float) # 10 basis elements with 3 parameters each
             M[0] = [1,1]
@@ -109,6 +105,8 @@ class SesemoAtom:
             M[7] = [0.25,1]
             M[8] = [0,0.25]
             M[9] = [0.25,0] 
+            '''
+            M = np.random.randn(2,10)
             return M
       
     ''' This initializes sensory basis which needs to be more reasonable now!
@@ -118,7 +116,7 @@ class SesemoAtom:
         if numofbasis is None:            
             #FOV*FOV is dimensionality of basis
             #FOV*4 is overcompleteness
-            S = np.random.randn([self.FOV*self.FOV,self.FOV*4],dtype=float)                   
+            S = np.random.randn(self.FOV*self.FOV,self.FOV*4)                   
         return S
    
    
@@ -126,25 +124,31 @@ class SesemoAtom:
      Global reward function. In this case total number of pixels but in future we
      can compute other things like spatio-temporal statistics 
     '''
-    def minPixels(self):
-  
+    def minPixels(self,var):
+        #Extract M,G
+        M=var[0:self.M.size]
+        G=var[self.M.size:]
+        beta = np.dot(self.alpha[self.TimeIdx],G)
+        #This is supposed to act on self but might not be acting so!! verify!
+        new_Self = np.dot(beta,M)
+        self.center = self.center + new_Self
+        total_active = self.minPixels(new_Self)
         #pixels. count them.   
-        #What are the variables - M,G
         penalty = self.UpdateWorld(self.center,self.world_center)
         total_active = np.sum(np.sum(self.Image)) + penalty
         return total_active
             
+    '''
 
-    '''
-    Objective that estimate both of G,M
-    '''
-    def learn_M_G(self,var):
+    #Objective that estimate both of G,M
+
+    def learn_M_G(M,G):
         #Extract variables        
-        G = var[0:np.shape(self.G)[0]*np.shape(self.G)[1]]
-        G = G.reshape([np.shape(self.G)[0],np.shape(self.G)[1]])
-        M = var[np.shape(self.G)[0]*np.shape(self.G)[1]:]
-        M = M.reshape([np.shape(self.M)[0],np.shape(self.M)[1]])
-        #compute beta
+#        G = var[0:self.G.size]
+#        G = G.reshape([np.shape(self.G)[0],np.shape(self.G)[1]])
+#        M = var[np.self.G.size:]
+#        M = M.reshape([np.shape(self.M)[0],np.shape(self.M)[1]])
+#        #compute beta
         beta = np.dot(self.alpha[self.TimeIdx],G)
         
         ##Calculate error
@@ -153,9 +157,9 @@ class SesemoAtom:
         #our current choice of M,beta as well
         new_Self = np.dot(beta,M)
         self.center = self.center + new_Self
-        total_active = minPixels(new_Self)
-        return dist_from_self
-        
+        total_active = self.minPixels(new_Self)
+        return total_active
+    '''        
     '''
     Objective that estimate only M
     '''
@@ -177,7 +181,8 @@ class SesemoAtom:
  
     def sensoryLearning(self,data):
         #Compute Gradient
-        grad = -2*self.alpha*(data -np.dot(self.alpha.T,self.S))
+        present_recon = np.dot(self.alpha[:][self.TimeIdx].T,self.S)
+        grad = -2*self.alpha*(data - present_recon)
         #check that there's no NANs
         if np.isnan(grad):
             print "gradient has NaNs and not the kind you can eat with curry!"
@@ -207,9 +212,9 @@ class SesemoAtom:
         mask_row = np.arange(0,self_row.size)
         mask_col = np.arange(0,self_col.size)
         #Copy Self sphere
-        self.Image[self_row,self_col] = MASK[mask_row,mask_col]
+        self.Image[self_row,self_col] = self.MASK[mask_row,mask_col]
         #How many pixels off screen??
-        PixelsOffScreen = np.abs(mask_row.size*mask_col.size -MASK.size) 
+        PixelsOffScreen = np.abs(mask_row.size*mask_col.size -self.MASK.size) 
 
         #check if lower than lower bounds for row/col
         #check if greater than upper bounds for row/col
@@ -225,19 +230,21 @@ class SesemoAtom:
         mask_row = np.arange(0,world_row.size)
         mask_col = np.arange(0,world_col.size)        
         #Copy world sphere
-        self.Image[world_row,world_col] = MASK[mask_row,mask_col]
+        self.Image[world_row,world_col] = self.MASK[mask_row,mask_col]
         
         return PixelsOffScreen
     
     
-    def learnmodel(self,EXPT):
+    def learnmodel(self):
         self.TimeIdx = 1
+        traj = trajectory.Trajectory(self.samples,1,2,[self.FOV,self.FOV],\
+            [self.sphereSize,self.sphereSize],True)
+        curr = np.zeros([1,2])
         #Increments of 5 and stop before the last 5
-        for ii in range(0,self.learnIterations,5):
+        for ii in range(0,self.learnIterations,1):
             #Let's party!
             #PIck out Data
-           curr = self.data[ii][:]
-           next_sample = self.data[ii+5][:]
+           next_sample = traj.next()
            diff_sample = next_sample-curr
            
            #Update World Center
@@ -245,25 +252,23 @@ class SesemoAtom:
            #Update Sensory Basis
            self.sensoryLearning(diff_sample)
            #Infer Coefficients on S
-           alpha_guess=np.zeros(self.alpha.size)
-           self.alpha[TimeIdx]=minimize(sparseSensoryInference,alpha_guess,\
-           [],method='BFGS')
+           alpha_guess=self.alpha[self.TimeIdx-1]
+           result=minimize(self.sparseSensoryInference,alpha_guess,\
+           args=diff_sample,method='BFGS')
+           self.alpha[:][self.TimeIdx]=result
            #Beta = Alpha*G
-           self.beta[TimeIdx]= np.dot(self.alpha,self.G)
+           self.beta[self.TimeIdx]= np.dot(self.alpha,self.G)
            #Solve MinPixels to pick best set of M,G
            #Init Variables
-           var= np.concatenate(self.G.flatten()[:],self.M.flatten()[:]),axis=0)
-           var = minimize(minPixels,var,[],method='BFGS')
+           var= np.concatenate((self.G.flatten()[:],self.M.flatten()[:]),axis=0)
+           var = minimize(self.minPixels,var,[],method='BFGS')
            #break it down
-           #self.G = 
-           #self.M =
+           self.G = var[0:self.G.size]
+           self.M = var[self.G.size+1:]
             
-            if self.DEBUG is True:        
-                pass
-               #DEBUG STATEMENTS GO HERE!
-
-            self.TrError[self.TimeIdx] = error
-            self.TimeIdx = self.TimeIdx + 1
+           self.TrError[self.TimeIdx] = np.sum(np.sum(self.Image))
+           self.TimeIdx = self.TimeIdx + 1
+           curr = next_sample
         return 1
 
        
