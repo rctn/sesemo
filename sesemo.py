@@ -69,7 +69,7 @@ class SesemoAtom:
         self.LR = .05
         self.TrError = np.zeros([self.learnIterations],dtype=float)
         self.TeError = np.zeros([self.learnIterations],dtype=float)
-        self.DEBUG = True
+        self.DEBUG = False
         
 
     def makeMask(self,radius):
@@ -123,10 +123,15 @@ class SesemoAtom:
         return total_active
             
   
-    def sparseSensoryInference(self,alpha,data):
+    def sparseSensoryInference(self,alpha):
         
-        present_recon = np.dot(alpha,self.S)
-        obj1 = np.linalg.norm(data - present_recon)
+        if self.DEBUG==True:
+            print "Shape of alpha in SparseInference is",np.shape(alpha)
+            print "Shape of data is",np.shape(self.diff_sample)
+            print "Shape of self.S in SparseInference is",np.shape(self.S)
+                    
+        present_recon = np.dot(self.S,np.reshape(alpha,[alpha.size,1]))
+        obj1 = np.linalg.norm(self.diff_sample.flatten()[:] - present_recon)
         obj2 = self.lam1*np.sum(np.absolute(alpha))                
         obj = obj1 + obj2        
         return obj
@@ -134,14 +139,20 @@ class SesemoAtom:
     def sensoryLearning(self,data):
         #Compute Gradient
         present_recon = np.dot(self.S, self.alpha[:,self.TimeIdx])
-        grad = -2*np.dot(self.alpha,(data - present_recon))
+        diff_err = data.flatten()[:] - present_recon   
+        #reshaping it so we can perform an outer product
+        diff_err_outer = np.reshape(diff_err,[diff_err.size,1])
+        alpha_outer = np.reshape(self.alpha[:,self.TimeIdx],[self.alpha[:,self.TimeIdx].size,1])
+        if self.DEBUG==True:
+            print np.shape(diff_err_outer),np.shape(alpha_outer)
+        grad = -2*np.dot(diff_err_outer,alpha_outer.T)
         #check that there's no NANs
-        if np.isnan(grad):
+        if np.any(np.isnan(grad)):
             print "gradient has NaNs and not the kind you can eat with curry!"
             return -1
             
         #Check that there's no Inf
-        if np.isinf(grad):
+        if np.any(np.isinf(grad)):
             print "gradient has Inf and not the kind you can draw on paper"
             return -2
         #Update S        
@@ -155,25 +166,32 @@ class SesemoAtom:
     '''
     def updateWorld(self,self_center,world_center):
         #Self Update Indices for the Image
-        print "self_center",self_center
+        if self.DEBUG==True:
+            print "self_center",self_center
         self_row = np.array([self_center[0]-self.sphereSize,self_center[0] + self.sphereSize+1]).astype(np.int)
-        self_col = np.array([self_center[1]-self.sphereSize,self_center[1] + self.sphereSize+1]).astype(np.int)
-        print self_row
-        print self_col
+        self_col = np.array([self_center[1]-self.sphereSize,self_center[1] + self.sphereSize+1]).astype(np.int)\
+
+        if self.DEBUG==True:
+            print self_row
+            print self_col
         #check if lower than lower bounds for row/col for IMAGE
         self_row = slice(*np.minimum(np.maximum(0,self_row),self.FOV))
         self_col = slice(*np.minimum(np.maximum(0,self_col),self.FOV))
-        print "Self Row",self_row
-        print "Self Col",self_col
+
+        if self.DEBUG==True:
+            print "Self Row",self_row
+            print "Self Col",self_col
         #Mask Indices        
         mask_row=np.array([self.sphereSize-self_center[0],self.sphereSize-self_center[0]+self.FOV])
         mask_col=np.array([self.sphereSize-self_center[1],self.sphereSize-self_center[1]+self.FOV])
         #Verify Mask Indices
         mask_row = slice(*np.minimum(np.maximum(0,mask_row),self.sphereSize*2 +1))
         mask_col = slice(*np.minimum(np.maximum(0,mask_col),self.sphereSize*2 +1))
+
+        if self.DEBUG==True:
         #Copy Self sphere
-        print "Mask Row", mask_row
-        print "Mask Col", mask_col
+            print "Mask Row", mask_row
+            print "Mask Col", mask_col
         self.Image[self_row,self_col] = self.MASK[mask_row,mask_col]
         
         #How many pixels off screen??
@@ -190,8 +208,9 @@ class SesemoAtom:
         
         world_row = slice(*np.minimum(np.maximum(0,world_row),self.FOV))
         world_col = slice(*np.minimum(np.maximum(0,world_col),self.FOV))
-        print "Self Row",world_row
-        print "Self Col",world_col
+        if self.DEBUG==True:
+            print "Self Row",world_row
+            print "Self Col",world_col
         #Mask Indices        
         mask_row=np.array([self.sphereSize-world_center[0],self.sphereSize-world_center[0]+self.FOV])
         mask_col=np.array([self.sphereSize-world_center[1],self.sphereSize-world_center[1]+self.FOV])
@@ -199,8 +218,9 @@ class SesemoAtom:
         mask_row = slice(*np.minimum(np.maximum(0,mask_row),self.sphereSize*2 +1))
         mask_col = slice(*np.minimum(np.maximum(0,mask_col),self.sphereSize*2 +1))
         #Copy Self sphere
-        print "Mask Row", mask_row
-        print "Mask Col", mask_col
+        if self.DEBUG==True:
+            print "Mask Row", mask_row
+            print "Mask Col", mask_col
         self.Image[world_row,world_col] = self.MASK[mask_row,mask_col]
         
         return PixelsOffScreen
@@ -220,21 +240,27 @@ class SesemoAtom:
            #######This should update to give an Image and that's what we are consturcting
            ######## our basis on
            next_traj = traj.next()
-           print "Shape of Center",np.shape(self.center)
-           print "Shape of next center is ",np.shape(next_traj)
-           print "Current Location of Center is ",self.center
+           if self.DEBUG==True:
+               print "Shape of Center",np.shape(self.center)
+               print "Shape of next center is ",np.shape(next_traj)
+               print "Current Location of Center is ",self.center
            self.updateWorld(self.center,next_traj.flatten())
            next_sample=self.Image
            diff_sample = next_sample-curr
+           self.diff_sample = diff_sample
            
            #Update World Center
            self.world_center = next_sample           
            #Update Sensory Basis
            self.sensoryLearning(diff_sample)
            #Infer Coefficients on S
-           alpha_guess=self.alpha[self.TimeIdx-1]
+           alpha_guess=self.alpha[:,self.TimeIdx-1]
+           if self.DEBUG==True:
+               print "Shape of alpha_guess",np.shape(alpha_guess)
+               print "Shape of data going into inference is",np.shape(diff_sample)
+               
            result=minimize(self.sparseSensoryInference,alpha_guess,\
-           args=diff_sample,method='BFGS')
+           method='BFGS')
            self.alpha[:][self.TimeIdx]=result
            #Beta = Alpha*G
            self.beta[self.TimeIdx]= np.dot(self.alpha,self.G)
