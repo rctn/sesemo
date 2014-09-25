@@ -48,9 +48,10 @@ class SesemoAtom:
             self.S = self.sensoryBasis()
 
         #One variable to tell us what we are actually seeing
-        self.Image = np.zeros([self.FOV,self.FOV],dtype=float)
+        self.Image = np.zeros([self.FOV,self.FOV],dtype=np.int)
         #This is the location of the center of the sphere we control
-        self.center = np.zeros([0,0],dtype=float) 
+        self.center = np.zeros(2,dtype=np.int) 
+        print "Initializeing the Center of the sphere",self.center
         #This is the radius of the sphere
         self.sphereSize = 3
         #MAke themask
@@ -72,19 +73,16 @@ class SesemoAtom:
         
 
     def makeMask(self,radius):
-        radius=4
-        CENTER = np.zeros(shape=(1,2))
-        CENTER[0][0] = radius
-        CENTER[0][1] = radius
-        MASK=np.zeros(shape=(radius*2 -1,radius*2 -1))
-        for ii in xrange(0,radius*2-1):
-            for jj in xrange(0,radius*2-1):
-                var1 = ((ii+1)-CENTER[0][0])**2
-                var2 = ((jj+1)-CENTER[0][1])**2
-#            print ii,jj, (np.sqrt(var1+var2)), radius 
-            #The 0.5 is to help break up the pixel to give a nicer shape
+        CENTER = np.ones(2)*radius
+        MASK=np.zeros(shape=(radius*2 +1,radius*2 +1))
+        for ii in xrange(0,radius*2+1):
+            for jj in xrange(0,radius*2+1):
+                var1 = ((ii)-CENTER[0])**2
+                var2 = ((jj)-CENTER[1])**2
+                #print ii,jj, (np.sqrt(var1+var2)), radius 
                 if (np.sqrt(var1 + var2)) <= (radius-0.5):
                     MASK[ii][jj]=1
+                
         return MASK
    
     '''This initializes the motor basis to be somethign
@@ -92,20 +90,6 @@ class SesemoAtom:
     def motorBasis(self,numofbasis=None):
         #I will setup a hand-coded basis that is left power, right power, time
 
-            '''
-            self.numofbasis_M='Default'
-            M = np.zeros([10,2],dtype=float) # 10 basis elements with 3 parameters each
-            M[0] = [1,1]
-            M[1] = [-1,-1]
-            M[2] = [1,0.5] 
-            M[3] = [0.5,1] 
-            M[4] = [1,-0.5]
-            M[5] = [-0.5,1] 
-            M[6] = [1,0.25]
-            M[7] = [0.25,1]
-            M[8] = [0,0.25]
-            M[9] = [0.25,0] 
-            '''
             M = np.random.randn(2,10)
             return M
       
@@ -116,7 +100,7 @@ class SesemoAtom:
         if numofbasis is None:            
             #FOV*FOV is dimensionality of basis
             #FOV*4 is overcompleteness
-            S = np.random.randn(self.FOV*self.FOV,self.FOV*4)                   
+            S = np.random.randn(self.FOV*self.FOV,self.FOV*self.FOV*4)                   
         return S
    
    
@@ -138,39 +122,7 @@ class SesemoAtom:
         total_active = np.sum(np.sum(self.Image)) + penalty
         return total_active
             
-    '''
-
-    #Objective that estimate both of G,M
-
-    def learn_M_G(M,G):
-        #Extract variables        
-#        G = var[0:self.G.size]
-#        G = G.reshape([np.shape(self.G)[0],np.shape(self.G)[1]])
-#        M = var[np.self.G.size:]
-#        M = M.reshape([np.shape(self.M)[0],np.shape(self.M)[1]])
-#        #compute beta
-        beta = np.dot(self.alpha[self.TimeIdx],G)
-        
-        ##Calculate error
-        #dist_from_self = np.linalg.norm(self.data -(self.center+np.dot(beta,M))) + np.linalg.norm(G)
-        #now our new error will be total active pixels which is affected by
-        #our current choice of M,beta as well
-        new_Self = np.dot(beta,M)
-        self.center = self.center + new_Self
-        total_active = self.minPixels(new_Self)
-        return total_active
-    '''        
-    '''
-    Objective that estimate only M
-    '''
-    def learn_M(self,var):
-        M = var
-        M = M.reshape([np.shape(self.M)[0],np.shape(self.M)[1]])
-        beta = np.dot(self.alpha[self.TimeIdx],self.G)
-        #Calculate error
-        dist_from_self = np.linalg.norm(self.data -(self.center+np.dot(beta,M)))        
-        return dist_from_self
-
+  
     def sparseSensoryInference(self,alpha,data):
         
         present_recon = np.dot(alpha,self.S)
@@ -181,8 +133,8 @@ class SesemoAtom:
  
     def sensoryLearning(self,data):
         #Compute Gradient
-        present_recon = np.dot(self.alpha[:][self.TimeIdx].T,self.S)
-        grad = -2*self.alpha*(data - present_recon)
+        present_recon = np.dot(self.S, self.alpha[:,self.TimeIdx])
+        grad = -2*np.dot(self.alpha,(data - present_recon))
         #check that there's no NANs
         if np.isnan(grad):
             print "gradient has NaNs and not the kind you can eat with curry!"
@@ -202,49 +154,77 @@ class SesemoAtom:
     of either self changes or world changes
     '''
     def updateWorld(self,self_center,world_center):
-        #Self Update Indices        
-        self_row = np.arange(self_center[0][0]-self.sphereSize,self_center[0][0] + self.sphereSize-1)
-        self_col = np.arange(self_center[0][1]-self.sphereSize,self_center[0][1] + self.sphereSize-1)
+        #Self Update Indices for the Image
+        print "self_center",self_center
+        self_row = np.array([self_center[0]-self.sphereSize,self_center[0] + self.sphereSize+1]).astype(np.int)
+        self_col = np.array([self_center[1]-self.sphereSize,self_center[1] + self.sphereSize+1]).astype(np.int)
+        print self_row
+        print self_col
         #check if lower than lower bounds for row/col for IMAGE
-        self_row = self_row[(self_row>=0)&(self_row<=self.FOV)]
-        self_col = self_col[(self_col>=0)&(self_col<=self.FOV)]
-        #We will just count the number of rows and columns 
-        mask_row = np.arange(0,self_row.size)
-        mask_col = np.arange(0,self_col.size)
+        self_row = slice(*np.minimum(np.maximum(0,self_row),self.FOV))
+        self_col = slice(*np.minimum(np.maximum(0,self_col),self.FOV))
+        print "Self Row",self_row
+        print "Self Col",self_col
+        #Mask Indices        
+        mask_row=np.array([self.sphereSize-self_center[0],self.sphereSize-self_center[0]+self.FOV])
+        mask_col=np.array([self.sphereSize-self_center[1],self.sphereSize-self_center[1]+self.FOV])
+        #Verify Mask Indices
+        mask_row = slice(*np.minimum(np.maximum(0,mask_row),self.sphereSize*2 +1))
+        mask_col = slice(*np.minimum(np.maximum(0,mask_col),self.sphereSize*2 +1))
         #Copy Self sphere
+        print "Mask Row", mask_row
+        print "Mask Col", mask_col
         self.Image[self_row,self_col] = self.MASK[mask_row,mask_col]
+        
         #How many pixels off screen??
-        PixelsOffScreen = np.abs(mask_row.size*mask_col.size -self.MASK.size) 
+        PixelsOffScreen = np.abs((self.sphereSize*2 +1)**2 - (mask_row.stop-mask_row.start)*\
+        (mask_col.stop-mask_col.start))
+        
+        print PixelsOffScreen
 
         #check if lower than lower bounds for row/col
         #check if greater than upper bounds for row/col
         #reduce the size of the MASK to match
-        world_row = np.arange(world_center[0][0]-self.sphereSize,world_center[0][0] + self.sphereSize-1)
-        world_col = np.arange(world_center[0][1]-self.sphereSize,world_center[0][1] + self.sphereSize-1)
+        world_row = np.array([world_center[0]-self.sphereSize,world_center[0] + self.sphereSize+1]).astype(np.int)
+        world_col = np.array([world_center[1]-self.sphereSize,world_center[1] + self.sphereSize+1]).astype(np.int)
         
-        #discarding invalid indices
-        world_row = world_row[(world_row>=0)&(world_row<=self.FOV)]
-        world_col = world_col[(world_col>=0)&(world_col<=self.FOV)]
-        
-        #update MASK indices
-        mask_row = np.arange(0,world_row.size)
-        mask_col = np.arange(0,world_col.size)        
-        #Copy world sphere
+        world_row = slice(*np.minimum(np.maximum(0,world_row),self.FOV))
+        world_col = slice(*np.minimum(np.maximum(0,world_col),self.FOV))
+        print "Self Row",world_row
+        print "Self Col",world_col
+        #Mask Indices        
+        mask_row=np.array([self.sphereSize-world_center[0],self.sphereSize-world_center[0]+self.FOV])
+        mask_col=np.array([self.sphereSize-world_center[1],self.sphereSize-world_center[1]+self.FOV])
+        #Verify Mask Indices
+        mask_row = slice(*np.minimum(np.maximum(0,mask_row),self.sphereSize*2 +1))
+        mask_col = slice(*np.minimum(np.maximum(0,mask_col),self.sphereSize*2 +1))
+        #Copy Self sphere
+        print "Mask Row", mask_row
+        print "Mask Col", mask_col
         self.Image[world_row,world_col] = self.MASK[mask_row,mask_col]
         
         return PixelsOffScreen
     
     
     def learnmodel(self):
+        print "Beginning Learn Model"
         self.TimeIdx = 1
+        print "Getting trajectories"
         traj = trajectory.Trajectory(self.samples,1,2,[self.FOV,self.FOV],\
             [self.sphereSize,self.sphereSize],True)
-        curr = np.zeros([1,2])
+        curr = np.zeros([self.FOV,self.FOV])
         #Increments of 5 and stop before the last 5
         for ii in range(0,self.learnIterations,1):
             #Let's party!
             #PIck out Data
-           next_sample = traj.next()
+           #######This should update to give an Image and that's what we are consturcting
+           ######## our basis on
+           next_traj = traj.next()
+           print "Shape of Center",np.shape(self.center)
+           print "Shape of next center is ",np.shape(next_traj)
+           print "Current Location of Center is ",self.center
+           self.updateWorld(self.center,next_traj.flatten())
+           next_sample=self.Image
            diff_sample = next_sample-curr
            
            #Update World Center
