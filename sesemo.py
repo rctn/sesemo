@@ -17,6 +17,7 @@ Mayur Mudigonda, April 16th 2014
 #import matplotlib.pyplot as plt
 import numpy as np
 from scipy.optimize import minimize
+from scipy.optimize import fmin_bfgs
 import trajectory
 
 
@@ -58,14 +59,14 @@ class SesemoAtom:
         self.MASK = self.makeMask(self.sphereSize)        
         
         #Inferred coffecients for Sensory percept
-        self.alpha = np.zeros([np.shape(self.S)[1],self.learnIterations],dtype=float) 
+        self.alpha = np.random.randn(np.shape(self.S)[1],self.learnIterations) 
         #Inferred cofficents for Motor representations
-        self.beta = np.zeros([np.shape(self.M)[1],self.learnIterations],dtype=float)
+        self.beta = np.random.randn(np.shape(self.M)[1],self.learnIterations)
         self.G = np.random.randn(np.shape(self.S)[1],np.shape(self.M)[1]) #Going between sensory and motor repr. spaces 
 
         
         self.TimeIdx = 0
-        self.lam1 = .05
+        self.lam1 = .1
         self.LR = .05
         self.TrError = np.zeros([self.learnIterations],dtype=float)
         self.TeError = np.zeros([self.learnIterations],dtype=float)
@@ -124,16 +125,14 @@ class SesemoAtom:
             
   
     def sparseSensoryInference(self,alpha):
-        
-        if self.DEBUG==True:
-            print "Shape of alpha in SparseInference is",np.shape(alpha)
-            print "Shape of data is",np.shape(self.diff_sample)
-            print "Shape of self.S in SparseInference is",np.shape(self.S)
-                    
+        #print "Shape of alpha in SparseInference is",np.shape(alpha)
+        #print "Shape of data is",np.shape(self.diff_sample)
+        #print "Shape of self.S in SparseInference is",np.shape(self.S)            
         present_recon = np.dot(self.S,np.reshape(alpha,[alpha.size,1]))
         obj1 = np.linalg.norm(self.diff_sample.flatten()[:] - present_recon)
         obj2 = self.lam1*np.sum(np.absolute(alpha))                
         obj = obj1 + obj2        
+        print obj1,obj2,obj
         return obj
  
     def sensoryLearning(self,data):
@@ -156,7 +155,8 @@ class SesemoAtom:
             print "gradient has Inf and not the kind you can draw on paper"
             return -2
         #Update S        
-        self.S = self.S + self.LR*grad        
+        self.S = self.S + self.LR*grad  
+        #Normalize the basis
 
         return 1
 
@@ -239,34 +239,40 @@ class SesemoAtom:
             #PIck out Data
            #######This should update to give an Image and that's what we are consturcting
            ######## our basis on
+           print "Grab next trajectory"
            next_traj = traj.next()
            if self.DEBUG==True:
                print "Shape of Center",np.shape(self.center)
                print "Shape of next center is ",np.shape(next_traj)
                print "Current Location of Center is ",self.center
+           print "updating next trajectory onto Image"
            self.updateWorld(self.center,next_traj.flatten())
            next_sample=self.Image
+           #Is this zero?
            diff_sample = next_sample-curr
            self.diff_sample = diff_sample
            
            #Update World Center
            self.world_center = next_sample           
            #Update Sensory Basis
+           print "Update Sensory basis"
            self.sensoryLearning(diff_sample)
            #Infer Coefficients on S
            alpha_guess=self.alpha[:,self.TimeIdx-1]
            if self.DEBUG==True:
                print "Shape of alpha_guess",np.shape(alpha_guess)
                print "Shape of data going into inference is",np.shape(diff_sample)
-               
-           result=minimize(self.sparseSensoryInference,alpha_guess,\
-           method='BFGS')
-           self.alpha[:][self.TimeIdx]=result
+           
+           print "Do Inference on Sensory basis",alpha_guess[0]
+           #result=minimize(self.sparseSensoryInference,alpha_guess,method='BFGS',options={'disp':True,'tol':1e-3})
+           result=fmin_bfgs(self.sparseSensoryInference,alpha_guess,gtol=1e-02,epsilon=1.1,maxiter=1,full_output=True)
+           self.alpha[:][self.TimeIdx]=result.x
            #Beta = Alpha*G
            self.beta[self.TimeIdx]= np.dot(self.alpha,self.G)
            #Solve MinPixels to pick best set of M,G
            #Init Variables
            var= np.concatenate((self.G.flatten()[:],self.M.flatten()[:]),axis=0)
+           print "Solve the minimizing"
            var = minimize(self.minPixels,var,[],method='BFGS')
            #break it down
            self.G = var[0:self.G.size]
@@ -274,6 +280,7 @@ class SesemoAtom:
             
            self.TrError[self.TimeIdx] = np.sum(np.sum(self.Image))
            self.TimeIdx = self.TimeIdx + 1
+           print "Timeidx",self.TimeIdx
            curr = next_sample
         return 1
 
