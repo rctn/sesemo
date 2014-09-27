@@ -23,8 +23,14 @@ import trajectory
 
 class SesemoAtom:
     
-    def __init__(self,pathtype=None, samples=None, iterations=None, learnMotor=None, learnSensory=None):
+    def __init__(self, pathtype=None, samples=None, iterations=None,
+                 learnMotor=None, learnSensory=None, rng=None):
         
+        if rng is None:
+            self.rng = np.random.RandomState(0)
+        else:
+            self.rng = rng
+
         if pathtype is None:
             self.pathtype='Default'
         else:
@@ -59,10 +65,10 @@ class SesemoAtom:
         self.MASK = self.makeMask(self.sphereSize)        
         
         #Inferred coffecients for Sensory percept
-        self.alpha = np.random.randn(np.shape(self.S)[1],self.learnIterations) 
+        self.alpha = self.rng.randn(np.shape(self.S)[1],self.learnIterations) 
         #Inferred cofficents for Motor representations
-        self.beta = np.random.randn(np.shape(self.M)[1],self.learnIterations)
-        self.G = np.random.randn(np.shape(self.S)[1],np.shape(self.M)[1]) #Going between sensory and motor repr. spaces 
+        self.beta = self.rng.randn(np.shape(self.M)[1],self.learnIterations)
+        self.G = self.rng.randn(np.shape(self.S)[1],np.shape(self.M)[1]) #Going between sensory and motor repr. spaces 
 
         
         self.TimeIdx = 0
@@ -76,8 +82,8 @@ class SesemoAtom:
     def makeMask(self,radius):
         CENTER = np.ones(2)*radius
         MASK=np.zeros(shape=(radius*2 +1,radius*2 +1))
-        for ii in xrange(0,radius*2+1):
-            for jj in xrange(0,radius*2+1):
+        for ii in xrange(radius*2+1):
+            for jj in xrange(radius*2+1):
                 var1 = ((ii)-CENTER[0])**2
                 var2 = ((jj)-CENTER[1])**2
                 #print ii,jj, (np.sqrt(var1+var2)), radius 
@@ -91,7 +97,7 @@ class SesemoAtom:
     def motorBasis(self,numofbasis=None):
         #I will setup a hand-coded basis that is left power, right power, time
 
-            M = np.random.randn(2,10)
+            M = self.rng.randn(2,10)
             return M
       
     ''' This initializes sensory basis which needs to be more reasonable now!
@@ -101,7 +107,8 @@ class SesemoAtom:
         if numofbasis is None:            
             #FOV*FOV is dimensionality of basis
             #FOV*4 is overcompleteness
-            S = np.random.randn(self.FOV*self.FOV,self.FOV*self.FOV*4)                   
+            S = self.rng.randn(self.FOV*self.FOV,self.FOV*self.FOV*4)                   
+            S = np.diag(np.sqrt(1./np.diag(S*S))).dot(S)
         return S
    
    
@@ -234,7 +241,7 @@ class SesemoAtom:
             [self.sphereSize,self.sphereSize],True)
         curr = np.zeros([self.FOV,self.FOV])
         #Increments of 5 and stop before the last 5
-        for ii in range(0,self.learnIterations,1):
+        for ii in xrange(self.learnIterations):
             #Let's party!
             #PIck out Data
            #######This should update to give an Image and that's what we are consturcting

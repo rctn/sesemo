@@ -12,7 +12,7 @@ from sesemo import SesemoAtom
 os.system('clear')
 
 #Atom = SesemoAtom(iterations=100,pathtype='Circle',learnMotor=2)
-Atom = SesemoAtom(iterations=30)
+Atom = SesemoAtom(iterations=2)
 #EXPT=1
 #plt.plot(Atom.x,Atom.y)
 Atom.learnmodel()
