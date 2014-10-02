@@ -5,7 +5,7 @@ Author: Jesse Livezey
 """
 import numpy as np
 
-_methods = ['acceln']
+_methods = ['acceln', 'static']
 _default_method = 'acceln'
 class Trajectory():
     def __init__(self, nIter, batch_size, dim, space_size, object_rad, valid=True, 
@@ -85,6 +85,13 @@ class Trajectory():
                         self.state[...,d] = np.clip(self.state[:,d], r, s-r)
                     else:
                         self.state[...,d] = np.clip(self.state[:,d], 0, s)
+        elif self.method == 'static':
+            if self.current == 0:
+                for d, s, r in zip(xrange(self.dim), self.space_size, self.object_rad):
+                    if self.valid:
+                        self.state[...,d] = self.rng.uniform(low=r, high=s-r, size=self.batch_size)
+                    else:
+                        self.state[...,d] = self.rng.uniform(low=0., high=s, size=self.batch_size)
         else:
             raise NotImplementedError(str(self.method)+' is not implemented '
                                       +'for generating trajectories')
