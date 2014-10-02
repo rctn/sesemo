@@ -17,9 +17,9 @@ Mayur Mudigonda, April 16th 2014
 #import matplotlib.pyplot as plt
 import numpy as np
 from scipy.optimize import minimize
-from scipy.optimize import fmin_bfgs
 import matplotlib.pyplot as plt
 import trajectory
+import sys
 
 
 class SesemoAtom:
@@ -48,7 +48,7 @@ class SesemoAtom:
         else:
             self.learnIterations = iterations                        
             self.testIterations = iterations
-        self.FOV = 8 # defines a FOV x FOV as the size of the world
+        self.FOV = 10 # defines a FOV x FOV as the size of the world
         
         if learnMotor is None:
             self.M = self.motorBasis()
@@ -60,11 +60,13 @@ class SesemoAtom:
         #This is the radius of the sphere
         self.sphereSize = 3
         #This is the location of the center of the sphere we control
-        self.center = np.ones(2,dtype=np.int)*self.sphereSize 
+        self.center = np.ones(2,dtype=np.int)*self.FOV/2
         print "Initializeing the Center of the sphere",self.center
 
         #MAke themask
-        self.MASK = self.makeMask(self.sphereSize)        
+        self.MASK = self.makeMask(self.sphereSize)   
+        print "This is to check what the sum of elements in the MASK are ",self.MASK.sum()
+        print self.MASK
         
         #Inferred coffecients for Sensory percept
         self.alpha = self.rng.randn(np.shape(self.S)[1],self.learnIterations) 
@@ -73,6 +75,8 @@ class SesemoAtom:
         #Inferred cofficents for Motor representations
         self.beta = self.rng.randn(np.shape(self.M)[1],self.learnIterations)
         self.G = self.rng.randn(np.shape(self.S)[1],np.shape(self.M)[1]) #Going between sensory and motor repr. spaces 
+        #Normalizing G
+        self.G = self.G.dot(np.diag(np.sqrt(1./(self.G*self.G).sum(axis=0))))
 
         
         self.TimeIdx = 0
@@ -80,7 +84,7 @@ class SesemoAtom:
         self.LR = .05
         self.TrError = np.zeros([self.learnIterations],dtype=float)
         self.TeError = np.zeros([self.learnIterations],dtype=float)
-        self.DEBUG = True
+        self.DEBUG = False
         
 
     def makeMask(self,radius):
@@ -102,6 +106,8 @@ class SesemoAtom:
         #I will setup a hand-coded basis that is left power, right power, time
 
             M = self.rng.randn(2,10)
+            M = M.dot(np.diag(np.sqrt(1./(M*M).sum(axis=0))))
+            print M
             return M
       
     ''' This initializes sensory basis which needs to be more reasonable now!
@@ -134,13 +140,17 @@ class SesemoAtom:
         
         #Now compute beta
         beta = np.dot(self.alpha[:,self.TimeIdx],G)
+        if self.DEBUG == True:
+            print "beta",beta
         #This is supposed to act on self but might not be acting so!! verify!
         new_Self = np.dot(beta,M.T)
+        if self.DEBUG == True:
+            print "New Self",new_Self
         center = self.center + new_Self
         #pixels. count them.   
-        penalty = self.updateWorld(center,self.world_center)
-        total_active = np.sum(np.sum(self.Image)) + penalty
-        
+        penalty,Image = self.updateWorld(center,self.world_center)
+        #print "Penalty, Pixels Active, beta_norm", penalty, Image.sum(), self.lam1*np.linalg.norm(beta)
+        total_active = Image.sum() + penalty  + self.lam1*np.linalg.norm(beta)        
         return total_active
             
   
@@ -166,7 +176,7 @@ class SesemoAtom:
     def sensoryLearning(self,data):
         #Compute Gradient
         present_recon = np.dot(self.S, self.alpha[:,self.TimeIdx])
-        diff_err = data.flatten()[:] - present_recon   
+        diff_err = data.flatten() - present_recon   
         #reshaping it so we can perform an outer product
         diff_err_outer = np.reshape(diff_err,[diff_err.size,1])
         alpha_outer = np.reshape(self.alpha[:,self.TimeIdx],[self.alpha[:,self.TimeIdx].size,1])
@@ -184,6 +194,8 @@ class SesemoAtom:
             return -2
         #Update S        
         self.S = self.S + self.LR*grad  
+        self.S = self.S.dot(np.diag(np.sqrt(1./(self.S*self.S).sum(axis=0))))
+
         #Normalize the basis
 
         return 1
@@ -193,6 +205,8 @@ class SesemoAtom:
     of either self changes or world changes
     '''
     def updateWorld(self,self_center,world_center):
+        
+        IMAGE = np.zeros_like(self.Image)
         #Self Update Indices for the Image
         if self.DEBUG==True:
             print "self_center",self_center
@@ -220,13 +234,20 @@ class SesemoAtom:
         #Copy Self sphere
             print "Mask Row", mask_row
             print "Mask Col", mask_col
-        self.Image[self_row,self_col] = self.MASK[mask_row,mask_col]
+        #Only Update when you are not calling this from minimize              
+        IMAGE[self_row,self_col] = self.MASK[mask_row,mask_col]
         
         #How many pixels off screen??
         PixelsOffScreen = np.abs((self.sphereSize*2 +1)**2 - (mask_row.stop-mask_row.start)*\
         (mask_col.stop-mask_col.start))
-        
-        print PixelsOffScreen
+        '''
+        if PixelsOffScreen == (2*self.sphereSize+1)**2:
+            print "Pixels Off Screen",PixelsOffScreen
+            sys.exit(0)
+        else:
+            pass
+            #print "Pixels Off Screen",PixelsOffScreen
+        '''
 
         #check if lower than lower bounds for row/col
         #check if greater than upper bounds for row/col
@@ -255,9 +276,9 @@ class SesemoAtom:
             print "Mask Row", mask_row
             print "Mask Col", mask_col
 
-        self.Image[world_row,world_col] = self.MASK[mask_row,mask_col]
+        IMAGE[world_row,world_col] = self.MASK[mask_row,mask_col]
         
-        return PixelsOffScreen
+        return PixelsOffScreen,IMAGE
     
     
     def learnmodel(self):
@@ -281,7 +302,11 @@ class SesemoAtom:
                print "Shape of next center is ",np.shape(next_traj)
                print "Current Location of Center is ",self.center
            print "updating next trajectory onto Image"
-           self.updateWorld(self.center,next_traj)
+           print "Self Center, Next Traj", self.center,next_traj
+           print "Calling Update World"
+           penalty, Image = self.updateWorld(self.center,next_traj)
+           self.IMAGE = Image
+           print "Self Center, Next Traj, PixelsOnScreen", self.center,next_traj, np.sum(self.Image.flatten())
            next_sample=self.Image
            #Is this zero?
            diff_sample = next_sample-curr
@@ -300,7 +325,7 @@ class SesemoAtom:
            
 #           print "Do Inference on Sensory basis",alpha_guess[0]
            self.diff_sample = self.diff_sample.astype(dtype=float)
-           self.diff_sample = self.diff_sample + self.rng.randn(self.FOV,self.FOV)/100.
+#           self.diff_sample = self.diff_sample + self.rng.randn(self.FOV,self.FOV)/100.
            plt.imshow(self.diff_sample)
            plt.show()
            print "Sum of diff_sample and absolute value",self.diff_sample.sum(),np.abs(self.diff_sample).sum()
@@ -321,10 +346,13 @@ class SesemoAtom:
            self.M = np.reshape(var.x[self.G.size:],self.M.shape)
            self.beta[:,self.TimeIdx]=np.dot(self.alpha[:,self.TimeIdx],self.G)
            new_Self = np.dot(self.beta[:,self.TimeIdx],self.M.T)
+           new_Self = new_Self/np.linalg.norm(new_Self)
+           print "new_Self", new_Self,self.center
            self.center = self.center + new_Self
            
             
-           self.TrError[self.TimeIdx] = np.sum(np.sum(self.Image))
+           self.TrError[self.TimeIdx] = np.linalg.norm(new_Self-self.center)**2
+           print "Training Error",self.TrError[self.TimeIdx]
            self.TimeIdx = self.TimeIdx + 1
            print "Timeidx",self.TimeIdx
            curr = next_sample
