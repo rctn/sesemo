@@ -48,7 +48,7 @@ class SesemoAtom:
         else:
             self.learnIterations = iterations                        
             self.testIterations = iterations
-        self.FOV = 10 # defines a FOV x FOV as the size of the world
+        self.FOV = 32 # defines a FOV x FOV as the size of the world
         
         if learnMotor is None:
             self.M = self.motorBasis()
@@ -58,7 +58,7 @@ class SesemoAtom:
         #One variable to tell us what we are actually seeing
         self.Image = np.zeros([self.FOV,self.FOV],dtype=np.int)
         #This is the radius of the sphere
-        self.sphereSize = 3
+        self.sphereSize = 4
         #This is the location of the center of the sphere we control
         self.center = np.ones(2,dtype=np.int)*self.FOV/2
         print "Initializeing the Center of the sphere",self.center
@@ -150,7 +150,8 @@ class SesemoAtom:
         #pixels. count them.   
         penalty,Image = self.updateWorld(center,self.world_center)
         #print "Penalty, Pixels Active, beta_norm", penalty, Image.sum(), self.lam1*np.linalg.norm(beta)
-        total_active = Image.sum() + penalty  + self.lam1*np.linalg.norm(beta)        
+        total_active = Image.sum() + 2*penalty
+        #print "G from with in the min function {0:.16f}".format(np.linalg.norm(self.G-G))
         return total_active
             
   
@@ -172,6 +173,17 @@ class SesemoAtom:
 #        print obj
 
         return obj
+        
+    def sparseSensoryInference_grad(self,alpha):
+        obj1 = -2*(self.diff_sample.flatten() - np.dot(self.S,alpha))
+        #print "Obj1 Shape",obj1.shape
+        obj2 = np.dot(obj1,self.S)
+        #print "Obj2 Shape",obj2.shape
+        obj3 = 0.1*np.sign(alpha)
+        #print "Obj3 Shape",obj3.shape
+        obj = obj2 + obj3
+        #print "Obj Shape", obj.shape
+        return obj.ravel()
  
     def sensoryLearning(self,data):
         #Compute Gradient
@@ -207,6 +219,8 @@ class SesemoAtom:
     def updateWorld(self,self_center,world_center):
         
         IMAGE = np.zeros_like(self.Image)
+        
+        
         #Self Update Indices for the Image
         if self.DEBUG==True:
             print "self_center",self_center
@@ -240,14 +254,7 @@ class SesemoAtom:
         #How many pixels off screen??
         PixelsOffScreen = np.abs((self.sphereSize*2 +1)**2 - (mask_row.stop-mask_row.start)*\
         (mask_col.stop-mask_col.start))
-        '''
-        if PixelsOffScreen == (2*self.sphereSize+1)**2:
-            print "Pixels Off Screen",PixelsOffScreen
-            sys.exit(0)
-        else:
-            pass
-            #print "Pixels Off Screen",PixelsOffScreen
-        '''
+      
 
         #check if lower than lower bounds for row/col
         #check if greater than upper bounds for row/col
@@ -276,7 +283,7 @@ class SesemoAtom:
             print "Mask Row", mask_row
             print "Mask Col", mask_col
 
-        IMAGE[world_row,world_col] = self.MASK[mask_row,mask_col]
+        IMAGE[world_row,world_col] = np.logical_or(IMAGE[world_row,world_col],self.MASK[mask_row,mask_col])
         
         return PixelsOffScreen,IMAGE
     
@@ -297,6 +304,7 @@ class SesemoAtom:
            ######## our basis on
            print "Grab next trajectory"
            next_traj = traj.next()[0]
+           print next_traj
            if self.DEBUG==True:
                print "Shape of Center",np.shape(self.center)
                print "Shape of next center is ",np.shape(next_traj)
@@ -305,7 +313,7 @@ class SesemoAtom:
            print "Self Center, Next Traj", self.center,next_traj
            print "Calling Update World"
            penalty, Image = self.updateWorld(self.center,next_traj)
-           self.IMAGE = Image
+           self.Image = Image
            print "Self Center, Next Traj, PixelsOnScreen", self.center,next_traj, np.sum(self.Image.flatten())
            next_sample=self.Image
            #Is this zero?
@@ -326,10 +334,15 @@ class SesemoAtom:
 #           print "Do Inference on Sensory basis",alpha_guess[0]
            self.diff_sample = self.diff_sample.astype(dtype=float)
 #           self.diff_sample = self.diff_sample + self.rng.randn(self.FOV,self.FOV)/100.
-           plt.imshow(self.diff_sample)
+           plt.imshow(self.Image,interpolation='nearest')
+           plt.figure()
+           plt.imshow(self.diff_sample,interpolation='nearest')
+           plt.figure()
+           plt.imshow(self.G,interpolation='nearest',aspect='auto')
            plt.show()
+           #print "Motor Basis",self.M.T          
            print "Sum of diff_sample and absolute value",self.diff_sample.sum(),np.abs(self.diff_sample).sum()
-           result=minimize(self.sparseSensoryInference,alpha_guess,method='BFGS')
+           result=minimize(self.sparseSensoryInference,alpha_guess,jac=self.sparseSensoryInference_grad,method='BFGS')
 #           result=fmin_bfgs(self.sparseSensoryInference,alpha_guess,gtol=1e-02,epsilon=1.1,maxiter=1,full_output=True)
            print "Finished Minimizing"
            self.alpha[:,self.TimeIdx]=result.x.flatten()
@@ -338,23 +351,29 @@ class SesemoAtom:
            #Init Variables
            var= np.concatenate((self.G.flatten(),self.M.flatten()),axis=0)
            print "Minimizing for min Pixels"
+           print "pixel cost",self.minPixels(var)
            var = minimize(self.minPixels,var,method='BFGS',options={'maxiter':5})
+           print "post pixel cost",self.minPixels(var.x)
             #Beta = Alpha*G
            print "Finished solving Min Pixels"
            #break it down
+           #print "Norm of difference in G", np.linalg.norm(self.G-np.reshape(var.x[:self.G.size],self.G.shape))
+           #print "Norm of difference in M", np.linalg.norm(self.M-np.reshape(var.x[self.G.size:],self.M.shape))
            self.G = np.reshape(var.x[:self.G.size],self.G.shape)
            self.M = np.reshape(var.x[self.G.size:],self.M.shape)
            self.beta[:,self.TimeIdx]=np.dot(self.alpha[:,self.TimeIdx],self.G)
            new_Self = np.dot(self.beta[:,self.TimeIdx],self.M.T)
-           new_Self = new_Self/np.linalg.norm(new_Self)
+           print "New Self Norm",np.linalg.norm(new_Self)
+           new_Self = new_Self/(1+np.linalg.norm(new_Self))
            print "new_Self", new_Self,self.center
            self.center = self.center + new_Self
            
             
-           self.TrError[self.TimeIdx] = np.linalg.norm(new_Self-self.center)**2
+           self.TrError[self.TimeIdx] = np.linalg.norm(self.center-self.world_center)
            print "Training Error",self.TrError[self.TimeIdx]
            self.TimeIdx = self.TimeIdx + 1
            print "Timeidx",self.TimeIdx
+           
            curr = next_sample
         return 1
 
