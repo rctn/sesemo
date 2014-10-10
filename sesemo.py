@@ -17,6 +17,7 @@ Mayur Mudigonda, April 16th 2014
 #import matplotlib.pyplot as plt
 import numpy as np
 from scipy.optimize import minimize
+from scipy.optimize import basinhopping
 import matplotlib.pyplot as plt
 import trajectory
 import sys
@@ -48,7 +49,7 @@ class SesemoAtom:
         else:
             self.learnIterations = iterations                        
             self.testIterations = iterations
-        self.FOV = 32 # defines a FOV x FOV as the size of the world
+        self.FOV = 10 # defines a FOV x FOV as the size of the world
         
         if learnMotor is None:
             self.M = self.motorBasis()
@@ -293,7 +294,7 @@ class SesemoAtom:
         self.TimeIdx = 1
         print "Getting trajectories"
         traj = trajectory.Trajectory(self.samples,1,2,[self.FOV,self.FOV],\
-            [self.sphereSize,self.sphereSize],True)
+            [self.sphereSize,self.sphereSize],True,method='static')
         curr = np.zeros([self.FOV,self.FOV])
         print "S Max, S Min",self.S.max(), self.S.min()
         #Increments of 5 and stop before the last 5
@@ -352,7 +353,8 @@ class SesemoAtom:
            var= np.concatenate((self.G.flatten(),self.M.flatten()),axis=0)
            print "Minimizing for min Pixels"
            print "pixel cost",self.minPixels(var)
-           var = minimize(self.minPixels,var,method='BFGS',options={'maxiter':5})
+           #var = minimize(self.minPixels,var,method='BFGS',options={'maxiter':5})
+           var = basinhopping(self.minPixels,var,niter_success=5)
            print "post pixel cost",self.minPixels(var.x)
             #Beta = Alpha*G
            print "Finished solving Min Pixels"
